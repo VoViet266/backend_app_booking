@@ -1,0 +1,86 @@
+# Build results
+bin/
+obj/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleasePublic/
+x64/
+x86/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDE Specific
+.idea/
+*.swp
+*.swo
+*~
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# Entity Framework
+*.db
+*.db-shm
+*.db-wal
+Migrations/
+
+# Rider & IntelliJ
+.idea/
+*.sln.iml
+
+# Environment & Configuration
+appsettings.Development.json
+appsettings.json
+appsettings.*.local.json
+.env
+.env.local
+.env.*.local
+
+# Firebase & Secrets
+*-firebase-adminsdk-*.json
+*.key
+*.pem
+secrets.json
+
+# Logs & Temp
+*.log
+*.tmp
+*.temp
+Logs/
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Node (if using npm/npm scripts)
+node_modules/
+package-lock.json
+npm-debug.log
+
+# User-specific files
+*.rsuser
+
+# Output folder
+publish/
+PublishProfiles/
+
+# Local database files
+*.mdf
+*.ldf
+*.localdb
+
+app-dat-lich-ff4ce-firebase-adminsdk-fbsvc-9f164bc445.json
