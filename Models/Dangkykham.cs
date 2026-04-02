@@ -1,5 +1,8 @@
-namespace his_backend.Models
-{
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
+namespace his_backend.Models;
+
+[Table("app_dangkykham", Schema = "current")]
     public class DangKyKham
     {
         public int MaDk { get; set; } 
@@ -23,7 +26,6 @@ namespace his_backend.Models
         public int TrangThai { get; set; }
         public string LoaiKham { get; set; }
         public string GhiChu { get; set; }
-         
         public string Mathe { get; set; }
         public decimal Phikham { get; set; }
         public decimal Phidv { get; set; }
@@ -33,8 +35,4 @@ namespace his_backend.Models
         public int HisId { get; set; }
         public string MngthisId { get; set; }
         public string HiqrCode { get; set; }
-
-
-
-    }
 }

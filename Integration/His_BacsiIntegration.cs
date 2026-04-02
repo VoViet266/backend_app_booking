@@ -21,7 +21,7 @@ public class His_BacsiIntegration : IHis_BacsiIntegration
     public async Task<ServiceResult<List<BacsiDto>>> GetBacsiAsync()
     {
         var data = await db.BacsiChuyenKhoas
-    .Where(x => x.NhanVien.Trangthai == "1" && (x.NhanVien.Holot.StartsWith("BS") || x.NhanVien.Holot.StartsWith("Ths. BS")))
+    .Where(x => x.NhanVien != null && x.NhanVien.Trangthai == "1" && (x.NhanVien.Holot.StartsWith("BS") || x.NhanVien.Holot.StartsWith("Ths. BS")))
     .Select(x => new BacsiDto
     {
         Manv = x.NhanVien.Manv,
@@ -30,7 +30,8 @@ public class His_BacsiIntegration : IHis_BacsiIntegration
         Mack = x.Mack,
         Duockham = x.NhanVien.Duockham,
         Trangthai = x.NhanVien.Trangthai,
-        TenChuyenKhoa = x.ChuyenKhoa.TenCk
+        TenChuyenKhoa = x.ChuyenKhoa.TenCk,
+        Gioitinh = x.NhanVien.Gioitinh
     })
     .ToListAsync();
 
@@ -49,7 +50,8 @@ public class His_BacsiIntegration : IHis_BacsiIntegration
         Mack = x.Mack,
         Duockham = x.NhanVien.Duockham,
         Trangthai = x.NhanVien.Trangthai,
-        TenChuyenKhoa = x.ChuyenKhoa.TenCk
+        TenChuyenKhoa = x.ChuyenKhoa.TenCk,
+        Gioitinh = x.NhanVien.Gioitinh
     })
     .ToListAsync();
         return ServiceResult<List<BacsiDto>>.Ok(data);

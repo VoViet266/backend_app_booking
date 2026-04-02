@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 namespace his_backend.Models;
 
+[Table("psdangky", Schema = "current")] 
 public partial class Psdangky
 {
     public string Mabn { get; set; } = null!;

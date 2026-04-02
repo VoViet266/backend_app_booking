@@ -28,4 +28,15 @@ public class ChuyenKhoaController : ControllerBase
             ? Ok(result)
             : NotFound(result);
     }
+
+    [HttpGet("chitiet-chuyenkhoa/{mack}")]
+    [ProducesResponseType(typeof(ServiceResult<List<ChuyenkhoaDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServiceResult<List<ChuyenkhoaDto>>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChiTietChuyenKhoa([FromRoute] string mack)
+    {
+        var result = await _chuyenkhoaService.GetById(mack);
+        return result.Success
+            ? Ok(result)
+            : NotFound(result);
+    }
 }

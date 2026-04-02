@@ -11,22 +11,20 @@ namespace his_backend.Controller;
 [Route("api/nguoibenh")]
 public class BenhnhanController : ControllerBase
 {
-    private readonly HisDbContext _hisDbContext;
+    
     private readonly AppDbContext _appDbContext;
     private readonly ILogger<BenhnhanController> _logger;
     private readonly HoSoBenhNhanService _hoSoService;
 
     private readonly DonthuocService _donthuocService;
 
-    public BenhnhanController( DonthuocService donthuocService, HisDbContext hisDbContext, AppDbContext appDbContext, ILogger<BenhnhanController> logger, HoSoBenhNhanService hoSoService)
+    public BenhnhanController( DonthuocService donthuocService, AppDbContext appDbContext, ILogger<BenhnhanController> logger, HoSoBenhNhanService hoSoService)
     {
-        _hisDbContext = hisDbContext;
         _appDbContext = appDbContext;
         _logger = logger;
         _hoSoService = hoSoService;
         _donthuocService = donthuocService;
     }
-
 
     [HttpPost("them-ho-so")]
     public async Task<IActionResult> ThemBenhnhan(ThemHosoRequest request)

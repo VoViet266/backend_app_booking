@@ -51,6 +51,10 @@ public class DangNhapRequest
 
     [Required(ErrorMessage = "Mật khẩu không được để trống")]
     public string MatKhau { get; set; } = null!;
+
+    public string? FcmToken { get; set; } = null!;
+
+    public string? DeviceId { get; set; } = null!;
 }
 
 public class DoiMatKhauRequest
@@ -72,10 +76,11 @@ public class RefreshTokenRequest
 public class DangNhapResponse
 {
     public string AccessToken  { get; set; } = null!;
-    public string RefreshToken { get; set; } = null!;
     public int ExpiresIn { get; set; }
     public NguoiDungInfo NguoiDung { get; set; } = null!;
 }
+
+
 
 public class DangKyRequest
 {
@@ -86,13 +91,16 @@ public class DangKyRequest
     [MinLength(6, ErrorMessage = "Mật khẩu tối thiểu 6 ký tự")]
     public string MatKhau { get; set; } = null!;    
 
-    [Required(ErrorMessage = "Họ lót không được để trống")]
-    [MaxLength(255)]
-    public string Holot { get; set; } = null!;
+    [Required(ErrorMessage = "CMND không được để trống")]
+    public string Cmnd { get; set; } = null!;
 
-    [Required(ErrorMessage = "Tên không được để trống")]
-    [MaxLength(255)]
-    public string Ten { get; set; } = null!;
+    public string? Token    { get; set; }  
+
+
+
+    public string? Holot { get; set; } = null!;
+
+    public string? Ten { get; set; } = null!;
 }
 
 

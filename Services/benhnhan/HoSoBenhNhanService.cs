@@ -51,12 +51,12 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     /// Nếu chưa có -> tạo hồ sơ mới rồi liên kết
     /// Nếu user đã liên kết hồ sơ này rồi -> trả về lỗi "đã thêm"
     /// </summary>
-    public async Task<ServiceResult<HoSoBenhNhanResponse>> ThemHoSoAsync(int userId, ThemHosoRequest req)
+    public async Task<ServiceResult<HoSoBenhNhan>> ThemHoSoAsync(int userId, ThemHosoRequest req)
     {
         // 1. Kiểm tra user tồn tại
         var userExist = await _db.AppUsers.AnyAsync(u => u.Mand == userId);
         if (!userExist)
-            return ServiceResult<HoSoBenhNhanResponse>.Fail("Không tìm thấy tài khoản", 404);
+            return ServiceResult<HoSoBenhNhan>.Fail("Không tìm thấy tài khoản", 404);
 
         Nguoibenhdangky hoSo;
         bool hoSoCu = false;
@@ -77,7 +77,7 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
                     .AnyAsync(x => x.AppUserId == userId && x.HoSoId == hoSo.Id);
 
                 if (daLienKet)
-                    return ServiceResult<HoSoBenhNhanResponse>.Fail(
+                    return ServiceResult<HoSoBenhNhan>.Fail(
                         $"Hồ sơ với CMND '{cmnd}' đã tồn tại trong danh sách của bạn", 409);
             }
             else
@@ -171,7 +171,7 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
             ? "Đã liên kết hồ sơ có sẵn"
             : "Thêm hồ sơ mới thành công";
 
-        return ServiceResult<HoSoBenhNhanResponse>
+        return ServiceResult<HoSoBenhNhan>
             .Ok(MapToResponse(lienKet), msg);
     }
 

@@ -7,10 +7,10 @@ using his_backend.DTOs;
 public interface ILichtrucService
 {
     Task<List<Lichtruc>> GetAll();
-    Task<Lichtruc> GetById(int id);
+    // Task<Lichtruc> GetById(int id);
     Task<ServiceResult<List<Lichtruc>>> GetbyMabs(string mabs);
-    Task<Lichtruc> GetbyMabsAndNgay(string mabs, DateOnly ngay);
-    Task<Lichtruc> GetbyMabsAndNgayAndThu(string mabs, DateOnly ngay, int thu);
+    // Task<Lichtruc> GetbyMabsAndNgay(string mabs, DateOnly ngay);
+    // Task<Lichtruc> GetbyMabsAndNgayAndThu(string mabs, DateOnly ngay, int thu);
 }
 
 public class LichtrucService : ILichtrucService
@@ -25,30 +25,30 @@ public class LichtrucService : ILichtrucService
         return await _context.Lichtrucs.ToListAsync();
     }
 
-    public async Task<Lichtruc> GetById(int id)
-    {
-        return await _context.Lichtrucs.FindAsync(id);
-    }
+    // public async Task<Lichtruc> GetById(int id)
+    // {
+    //     return await _context.Lichtrucs.FindAsync(id);
+    // }
 
     public async Task<ServiceResult<List<Lichtruc>>> GetbyMabs(string mabs)
         {
-            var result = await _context.Lichtrucs.Where(l => l.Mabs == mabs).ToListAsync();
+            var result = await _context.Lichtrucs.Where(l => l.manv == mabs).ToListAsync();
         return ServiceResult<List<Lichtruc>>.Ok(result);
     }
 
 
-    public async Task<Lichtruc> GetbyMabsAndNgay(string mabs, DateOnly ngay)
-    {
-        return await _context.Lichtrucs.FirstOrDefaultAsync(l => l.Mabs == mabs && l.Ngay == ngay);
-    }
+    // public async Task<Lichtruc> GetbyMabsAndNgay(string mabs, DateOnly ngay)
+    // {
+    //     return await _context.Lichtrucs.FirstOrDefaultAsync(l => l.manv == mabs && l.ngaytruc == ngay);
+    // }
 
-    public async Task<Lichtruc> GetbyMabsAndNgayAndThu(string mabs, DateOnly ngay, int thu)
-    {
-        return await _context.Lichtrucs.FirstOrDefaultAsync(l => l.Mabs == mabs && l.Ngay == ngay && l.Thu == thu);
-    }
+    // public async Task<Lichtruc> GetbyMabsAndNgayAndThu(string mabs, DateOnly ngay, int thu)
+    // {
+    //     return await _context.Lichtrucs.FirstOrDefaultAsync(l => l.manv == mabs && l.ngaytruc == ngay && l.loai_truc == thu);
+    // }
 
-    public async Task<Lichtruc> GetbyMabsAndNgayAndThuAndLoaiCa(string mabs, DateOnly ngay, int thu, string loaiCa)
-    {
-        return await _context.Lichtrucs.FirstOrDefaultAsync(l => l.Mabs == mabs && l.Ngay == ngay && l.Thu == thu && l.LoaiCa == loaiCa);
-    }
+    // public async Task<Lichtruc> GetbyMabsAndNgayAndThuAndLoaiCa(string mabs, DateOnly ngay, int thu, string loaiCa)
+    // {
+    //     return await _context.Lichtrucs.FirstOrDefaultAsync(l => l.manv == mabs && l.ngaytruc == ngay && l.loai_truc == thu && l.loai_truc == loaiCa);
+    // }
 }

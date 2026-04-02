@@ -1,5 +1,6 @@
 namespace his_backend.Models;
-
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 /// <summary>
 /// Bảng liên kết nhiều-nhiều giữa AppUser và Nguoibenhdangky.
 /// 1 user có thể liên kết nhiều hồ sơ bệnh nhân (bản thân + người thân).

@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace his_backend.Models;
 
+[Table("pshdxn", Schema = "current")]
 public partial class Pshdxn 
 {
     public string? Sohd { get; set; }

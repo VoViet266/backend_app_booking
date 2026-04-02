@@ -8,7 +8,10 @@ public class HoSoBenhNhan
     public DateOnly? Ngaysinh { get; set; }
     public decimal? Gioitinh { get; set; }
     public string? Diachi { get; set; }
+    [MaxLength(15, ErrorMessage = "Số điện thoại không hợp lệ")]
+    [RegularExpression("^[0-9]+$", ErrorMessage = "Số điện thoại không hợp lệ")]
     public string? Sodienthoai { get; set; }
+    [MaxLength(12, ErrorMessage = "CMND không hợp lệ")] 
     public string? Cmnd { get; set; }
     public string? Maqg { get; set; }
     public string? NhomMau { get; set; }

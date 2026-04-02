@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
 namespace his_backend.Models;
 
+[Table("khambenh", Schema = "current")] 
 public partial class Khambenh
 {
     public string Mabn { get; set; } = null!;

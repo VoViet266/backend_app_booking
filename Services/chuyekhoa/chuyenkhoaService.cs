@@ -26,4 +26,18 @@ public class chuyenkhoaService
             .ToListAsync();
         return ServiceResult<List<ChuyenkhoaDto>>.Ok(danhSach);
     }
+
+    public async Task<ServiceResult<ChuyenkhoaDto>> GetById(string? mack)
+    {
+        var danhSach = await _db.Dmchuyenkhoas
+            .Where(ck => ck.Mack == mack)   
+            .Select(ck => new ChuyenkhoaDto
+            {
+                Mack             = ck.Mack,
+                TenCk            = ck.TenCk,
+                MoTaTrieuChung   = ck.MoTaTrieuChung
+            })
+            .FirstOrDefaultAsync();
+        return ServiceResult<ChuyenkhoaDto>.Ok(danhSach);
+    }
 }

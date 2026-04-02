@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace his_backend.Models;
 
-[Table("bacsi_chuyenkhoa", Schema = "benhnhan")]
+[Table("app_bacsi_chuyenkhoa", Schema = "benhnhan")]
 public class BacsiChuyenKhoa
 {
     [Key]

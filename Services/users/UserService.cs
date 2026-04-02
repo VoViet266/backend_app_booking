@@ -8,6 +8,7 @@ namespace his_backend.Services;
 public interface IUserService
 {
     Task<ServiceResult<NguoiDungInfo>> LayThongTinAsync(int userId);
+    Task<ServiceResult<NguoiDungInfo>> LayUser(int userId);
 }
 
 public class UserService : IUserService
@@ -42,8 +43,23 @@ public class UserService : IUserService
 
         return ServiceResult<NguoiDungInfo>.Ok(new NguoiDungInfo
         {
-           
             SoDienThoai     = user.Sodienthoai,
+            Holot           = user.Holot ?? string.Empty,
+            Ten             = user.Ten ?? string.Empty,
+        });
+    }
+
+    public async Task<ServiceResult<NguoiDungInfo>> LayUser(int userId)
+    {
+        var user = await _db.AppUsers
+        .Where(x => x.Mand == userId)
+        .FirstOrDefaultAsync();
+        if (user is null)
+            return ServiceResult<NguoiDungInfo>.Fail("Không tìm thấy người dùng", 404);
+
+        return ServiceResult<NguoiDungInfo>.Ok(new NguoiDungInfo
+        {
+            SoDienThoai     = user.SoDienThoai,
             Holot           = user.Holot ?? string.Empty,
             Ten             = user.Ten ?? string.Empty,
         });

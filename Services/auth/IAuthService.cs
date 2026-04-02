@@ -15,6 +15,8 @@ public interface IAuthService
 
     Task<ServiceResult<object>> DoiMatKhauAsync(int userId, DoiMatKhauRequest req);
 
+    Task SaveDeviceTokenAsync(int userId, string deviceId, string tokenfcm);
+
     
 
 }

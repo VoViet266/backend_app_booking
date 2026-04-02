@@ -38,12 +38,21 @@ public class UserController : ControllerBase
             : NotFound(ServiceResult<NguoiDungInfo>.Fail(result.Message));
     }
 
-    // ─── Hồ sơ bệnh nhân (1 user → nhiều hồ sơ, dùng lại nếu CMND đã có) ───
+    [HttpGet("layuser")]
+    [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUser()
+    {   
+        var userId = LayUserId();
+        if (userId is null)
+            return Unauthorized(ServiceResult<NguoiDungInfo>.Fail("Không xác định được người dùng"));
+        var result = await _userService.LayUser(userId.Value);
+        return result.Success
+            ? Ok(ServiceResult<NguoiDungInfo>.Ok(result.Data!))
+            : NotFound(ServiceResult<NguoiDungInfo>.Fail(result.Message));
+    }
 
-    /// <summary>
-    /// Lấy danh sách tất cả hồ sơ bệnh nhân của user đang đăng nhập
-    /// (bản thân + người thân đã thêm)
-    /// </summary>
+
     [HttpGet("ho-so")]
     [ProducesResponseType(typeof(ServiceResult<List<HoSoBenhNhanResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> LayDanhSachHoSo()

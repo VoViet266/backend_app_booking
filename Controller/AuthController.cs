@@ -42,7 +42,6 @@ public class AuthController : ControllerBase
                 ServiceResult<NguoiDungInfo>.Fail(result.Message));
     }
 
-  
     [HttpPost("dang-nhap")]
     [ProducesResponseType(typeof(ServiceResult<DangNhapResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<DangNhapResponse>), StatusCodes.Status401Unauthorized)]
@@ -52,13 +51,17 @@ public class AuthController : ControllerBase
             return BadRequest(ServiceResult<DangNhapResponse>.Fail("Thông tin không hợp lệ"));
 
         var result = await _authService.DangNhapAsync(req);
+        if (result.Success && result.Data != null)
+        {   
+
+            await _authService.SaveDeviceTokenAsync(result.Data.NguoiDung.Id, req.DeviceId, req.FcmToken);
+        }
         return result.Success
             ? Ok(ServiceResult<DangNhapResponse>.Ok(result.Data!))
             : StatusCode(result.StatusCode,
                 ServiceResult<DangNhapResponse>.Fail(result.Message));
     }
 
-  
     [HttpPost("lam-moi-token")]
     [ProducesResponseType(typeof(ServiceResult<DangNhapResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<DangNhapResponse>), StatusCodes.Status401Unauthorized)]

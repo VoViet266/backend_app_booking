@@ -1,9 +1,7 @@
 namespace his_backend.Models;
-
-/// <summary>
-/// Hồ sơ bệnh nhân độc lập — không thuộc riêng user nào.
-/// Nhiều user có thể cùng liên kết 1 hồ sơ qua bảng AppUserHoSo.
-/// </summary>
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
+[Table("app_nguoibenhdangky", Schema = "datlichkham")]
 public class Nguoibenhdangky
 {
     public int Id { get; set; }
@@ -14,7 +12,6 @@ public class Nguoibenhdangky
     public string? Diachi { get; set; }
     public string? Sodienthoai { get; set; }
     public string? Cmnd { get; set; }
-
     public DateOnly? Ngaycap { get; set; }
     public string? Noicap { get; set; }
     public string? Maloaigiayto { get; set; }

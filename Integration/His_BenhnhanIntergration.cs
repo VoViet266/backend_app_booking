@@ -15,10 +15,10 @@ public interface IHis_BenhnhanIntegration
 
 public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
 {
-    private readonly HisDbContext _hisDbContext;
-    public His_BenhnhanIntegration(HisDbContext hisDbContext)
+    private readonly AppDbContext _appDbContext;
+    public His_BenhnhanIntegration(AppDbContext appDbContext)
     {
-        _hisDbContext = hisDbContext;
+        _appDbContext = appDbContext;
     }
 
     public async Task<ServiceResult<List<DmbenhnhanDto>>> GetBenhnhanAsync()
@@ -37,20 +37,20 @@ public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
     public async Task<ServiceResult<List<LichSuKhamDto>>> GetLichSuKhamBnAsync(string cmnd)
     {
         var mathe = await (
-            from p in _hisDbContext.Psdangkies
-            join d2 in _hisDbContext.Dmbenhnhans
+            from p in _appDbContext.Psdangkies
+            join d2 in _appDbContext.Dmbenhnhans
                 on p.Mabn equals d2.Mabn
             where d2.Cmnd == cmnd
             select p.Mathe
         ).ToListAsync();
 
         var lichsukham = await (
-            from p in _hisDbContext.Psdangkies
-            join d2 in _hisDbContext.Dmbenhnhans
+            from p in _appDbContext.Psdangkies
+            join d2 in _appDbContext.Dmbenhnhans
                 on p.Mabn equals d2.Mabn
-            join k in _hisDbContext.Khambenhs
+            join k in _appDbContext.Khambenhs
                 on p.Makb equals k.Makb
-            join d in _hisDbContext.Dmicds
+            join d in _appDbContext.Dmicds
                 on k.Maicd equals d.Maicd into dJoin
             from d in dJoin.DefaultIfEmpty() 
             where mathe.Contains(p.Mathe) && k.Dakham == 3
@@ -86,7 +86,7 @@ public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
     public async Task<ServiceResult<List<DotKhamDto>>> GetToaThuocTheoLichSuKhamAsync(string cmnd)
     {
         // Bước 1: Lấy danh sách mabn từ dmbenhnhan theo cmnd
-        var mabnList = await _hisDbContext.Dmbenhnhans
+        var mabnList = await _appDbContext.Dmbenhnhans
             .Where(d => d.Cmnd == cmnd)
             .Select(d => d.Mabn)
             .Distinct()
@@ -100,8 +100,8 @@ public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
 
         // Bước 2: Query toa thuốc: pshdxn JOIN dmthuoc, filter theo danh sách mabn
         var data = await (
-            from p in _hisDbContext.Pshdxns
-            join dm in _hisDbContext.Dmthuocs
+            from p in _appDbContext.Pshdxns
+            join dm in _appDbContext.Dmthuocs
                 on p.Mahh equals dm.Mahh
             where mabnList.Contains(p.Mabn)
                   && p.Xoa != 1  // loại bỏ bản ghi đã xóa
@@ -156,7 +156,7 @@ public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
     public async Task<ServiceResult<List<DonthuocDto>>> GetChiTietDonThuocAsync(string makb)
     {
         // Lấy maba từ đợt khám
-        var dotKham = await _hisDbContext.Psdangkies
+        var dotKham = await _appDbContext.Psdangkies
             .Where(dk => dk.Makb == makb)
             .Select(dk => new { dk.Maba, dk.Mabn, dk.Ngaydk })
             .FirstOrDefaultAsync();
@@ -168,8 +168,8 @@ public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
         }
 
         // Query đơn thuốc theo maba (nếu có) hoặc fallback theo mabn + ngayhd
-        var query = _hisDbContext.Pshdxns
-            .Join(_hisDbContext.Dmthuocs,
+        var query = _appDbContext.Pshdxns
+            .Join(_appDbContext.Dmthuocs,
                 p => p.Mahh,
                 d => d.Mahh,
                 (p, d) => new { p, d })

@@ -27,7 +27,7 @@ public class JwtService : IJwtService
     public string TaoAccessToken(AppUser user)
     {
         var jwt        = _config.GetSection("Jwt");
-        var secretKey  = jwt["SecretKey"]  ?? throw new InvalidOperationException("Jwt:SecretKey chÆ°a cáº¥u hÃ¬nh");
+        var secretKey  = jwt["SecretKey"]  ?? throw new InvalidOperationException("Jwt:SecretKey chưa cấu hình");
         var issuer     = jwt["Issuer"]     ?? "his-backend";
         var audience   = jwt["Audience"]   ?? "his-app";
         var expiryMins = int.Parse(jwt["AccessTokenExpiryMinutes"] ?? "60");

@@ -5,6 +5,7 @@ public class BacsiDto
     public string Ten { get; set; }
     public string Madv { get; set; }
     public required string Mack { get; set; }
+    public decimal? Gioitinh { get; set; }
     public string Macv { get; set; }
     public string Duockham { get; set; }
     public string Trangthai { get; set; }

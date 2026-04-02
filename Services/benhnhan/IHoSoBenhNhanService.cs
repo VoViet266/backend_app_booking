@@ -6,7 +6,7 @@ public interface IHoSoBenhNhanService
 {
     Task<ServiceResult<List<HoSoBenhNhanResponse>>> LayDanhSachAsync(int userId);
     Task<ServiceResult<HoSoBenhNhanResponse>> LayChiTietAsync(int userId, int hoSoId);
-    Task<ServiceResult<HoSoBenhNhanResponse>> ThemHoSoAsync(int userId, ThemHosoRequest req);
+    Task<ServiceResult<HoSoBenhNhan>> ThemHoSoAsync(int userId, ThemHosoRequest req);
     // Task<ServiceResult<HoSoBenhNhanResponse>> CapNhatLienKetAsync(int userId, int hoSoId, CapNhatLienKetRequest req);
     Task<ServiceResult<HoSoBenhNhan>> CapNhatHoSoAsync(
         int hoSoId,

@@ -8,15 +8,37 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-
+using FirebaseAdmin;
+using FirebaseAdmin.Messaging;
+using Google.Apis.Auth.OAuth2;
+using Hangfire;
+using Hangfire.PostgreSql;
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<HisDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("LocalConnection")));
+// Khởi tạo Firebase Admin SDK
+if (FirebaseApp.DefaultInstance == null)
+{
+    FirebaseApp.Create(new AppOptions()
+    {
+        Credential = GoogleCredential.FromFile("app-dat-lich-ff4ce-firebase-adminsdk-fbsvc-9f164bc445.json")
+    });
+}
 
+
+//database app
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+
+// 1. Cấu hình Hangfire sử dụng chung chuỗi kết nối Database với app của bạn
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// 2. Thêm Hangfire Server 
+builder.Services.AddHangfireServer();
 var jwtConfig  = builder.Configuration.GetSection("Jwt");
 var secretKey  = jwtConfig["SecretKey"]  ?? throw new InvalidOperationException("Thiếu Jwt:SecretKey trong appsettings");
 var issuer     = jwtConfig["Issuer"]     ?? "his-backend";
@@ -52,6 +74,7 @@ builder.Services.AddScoped<IDangkykbService, DangkykbService>();
 builder.Services.AddScoped<IHis_BenhnhanIntegration, His_BenhnhanIntegration>();
 builder.Services.AddScoped<IHis_BacsiIntegration, His_BacsiIntegration>();
 builder.Services.AddScoped<ILichtrucService, LichtrucService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 
 builder.Services.AddControllers();
@@ -97,6 +120,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+app.UseHangfireDashboard(); // http://localhost:5000/hangfire
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

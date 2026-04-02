@@ -52,7 +52,6 @@ public class AuthService : IAuthService
             Nguoibenhdangky? hoSo = null;
             bool hoSoCu = false;
 
-        
             if (hoSo is null)
             {
                 hoSo = new Nguoibenhdangky
@@ -60,6 +59,7 @@ public class AuthService : IAuthService
                     Holot        = req.Holot?.Trim() ?? string.Empty,
                     Ten          = req.Ten?.Trim() ?? string.Empty,
                     Sodienthoai  = sdt,
+                    Cmnd         = req.Cmnd?.Trim(),
                 };  
                 _db.Nguoibenhdangkys.Add(hoSo);
             }
@@ -88,7 +88,6 @@ public class AuthService : IAuthService
             {
                 Id              = user.Mand,
                 SoDienThoai     = user.SoDienThoai,
-                NgayTao         = user.NgayTao,
                 LanDangNhapCuoi = user.LanDangNhapCuoi,
                 Holot           = user.Holot ?? string.Empty,
                 Ten             = user.Ten ?? string.Empty,
@@ -103,7 +102,6 @@ public class AuthService : IAuthService
             return ServiceResult<NguoiDungInfo>.Fail("Đã có lỗi xảy ra, vui lòng thử lại sau.", 500);
         }
     }
-  
 
     public async Task<ServiceResult<DangNhapResponse>> DangNhapAsync(DangNhapRequest req)
     {
@@ -121,45 +119,92 @@ public class AuthService : IAuthService
         var accessToken  = _jwt.TaoAccessToken(user);
         var refreshToken = _jwt.TaoRefreshToken();
 
-        user.RefreshToken       = refreshToken;
-        user.RefreshTokenHetHan = DateTimeOffset.UtcNow.AddDays(REFRESH_TOKEN_NGAY);
-        user.LanDangNhapCuoi    = DateTimeOffset.UtcNow;
-        await _db.SaveChangesAsync();
+    var token = await _db.Usertokens
+        .FirstOrDefaultAsync(t => t.UserId == user.Mand && t.DeviceId == req.DeviceId);
 
-        _logger.LogInformation("Đăng nhập: {SDT} (userId={Id})", sdt, user.Mand);
+    //Tạo token mới mỗi lần đăng nhập 
+    _db.Usertokens.Add(new Usertoken
+    {
+        UserId = user.Mand,
+        DeviceId = req.DeviceId,
+        FcmToken = req.FcmToken,
+        RefreshToken = refreshToken,
+        RefreshTokenHetHan = DateTimeOffset.UtcNow.AddDays(REFRESH_TOKEN_NGAY),
+    });
 
-        return ServiceResult<DangNhapResponse>.Ok(BuildDangNhapResponse(user, accessToken, refreshToken));
+    var activeTokens = await _db.Usertokens
+    .Where(t => t.UserId == user.Mand)
+    .OrderByDescending(t => t.RefreshTokenHetHan)
+    .ToListAsync();
+
+
+    ///Xóa token cũ đi nếu quá 5 token
+    if (activeTokens.Count > 4) {
+        var tokensToRemove = activeTokens.Skip(4).ToList();
+        _db.Usertokens.RemoveRange(tokensToRemove);
     }
 
+        await _db.SaveChangesAsync();
+
+    _logger.LogInformation("Đăng nhập: {SDT} (userId={Id}, deviceId={DeviceId})", sdt, user.Mand, req.DeviceId);
+
+        return ServiceResult<DangNhapResponse>.Ok(BuildDangNhapResponse(user, accessToken));
+    }
+
+    public async Task SaveDeviceTokenAsync(int userId, string deviceId, string tokenfcm)
+    {   
+        if (string.IsNullOrEmpty(deviceId) || string.IsNullOrEmpty(tokenfcm))
+            return;
+
+        var existing = await _db.Usertokens
+            .FirstOrDefaultAsync(t => t.UserId == userId && t.DeviceId == deviceId);
+
+        if (existing != null)
+        {
+            existing.FcmToken = tokenfcm;
+        }
+        else
+        {
+            _db.Usertokens.Add(new Usertoken
+            {
+                UserId   = userId,
+                DeviceId = deviceId,
+                FcmToken = tokenfcm
+            });
+        }
+
+        await _db.SaveChangesAsync();
+    }
     public async Task<ServiceResult<DangNhapResponse>> LamMoiTokenAsync(string refreshToken)
     {
-        var user = await _db.AppUsers.FirstOrDefaultAsync(u =>
+        var user = await _db.Usertokens.FirstOrDefaultAsync(u =>
             u.RefreshToken == refreshToken && u.RefreshTokenHetHan > DateTimeOffset.UtcNow);
 
         if (user is null)
             return ServiceResult<DangNhapResponse>.Fail(
                 "Refresh token không hợp lệ hoặc đã hết hạn, vui lòng đăng nhập lại", 401);
 
-        if (!user.IsActive)
+        var userApp = await _db.AppUsers.FindAsync(user.UserId);
+        if (!userApp.IsActive)
             return ServiceResult<DangNhapResponse>.Fail("Tài khoản đã bị khoá", 401);
 
-        var newAccess  = _jwt.TaoAccessToken(user);
+        var newAccess  = _jwt.TaoAccessToken(userApp);
         var newRefresh = _jwt.TaoRefreshToken();
 
         user.RefreshToken       = newRefresh;
         user.RefreshTokenHetHan = DateTimeOffset.UtcNow.AddDays(REFRESH_TOKEN_NGAY);
         await _db.SaveChangesAsync();
 
-        return ServiceResult<DangNhapResponse>.Ok(BuildDangNhapResponse(user, newAccess, newRefresh));
+        return ServiceResult<DangNhapResponse>.Ok(BuildDangNhapResponse(userApp, newAccess));
     }
 
     public async Task<ServiceResult<object>> DangXuatAsync(int userId)
     {
-        var user = await _db.AppUsers.FindAsync(userId);
+        var user = await _db.Usertokens
+            .FirstOrDefaultAsync(t => t.UserId == userId);
         if (user is not null)
         {
-            user.RefreshToken       = null;
-            user.RefreshTokenHetHan = null;
+            _db.Usertokens.Remove(user);
             await _db.SaveChangesAsync();
         }
 
@@ -176,10 +221,14 @@ public class AuthService : IAuthService
 
         if (!BCrypt.Net.BCrypt.Verify(req.MatKhauCu, user.MatKhauHash))
             return ServiceResult<object>.Fail("Mật khẩu cũ không đúng");
-
+        var userToken = await _db.Usertokens
+            .FirstOrDefaultAsync(t => t.UserId == userId);
+        if (userToken is not null)
+        {
+            _db.Usertokens.Remove(userToken);
+            await _db.SaveChangesAsync();
+        }
         user.MatKhauHash        = BCrypt.Net.BCrypt.HashPassword(req.MatKhauMoi, workFactor: 12);
-        user.RefreshToken       = null;
-        user.RefreshTokenHetHan = null;
         await _db.SaveChangesAsync();
 
 
@@ -188,17 +237,15 @@ public class AuthService : IAuthService
 
 
 
-    private DangNhapResponse BuildDangNhapResponse(AppUser user, string access, string refresh) =>
+    private DangNhapResponse BuildDangNhapResponse(AppUser user, string access) =>
         new()
         {
             AccessToken  = access,
-            RefreshToken = refresh,
             ExpiresIn    = ACCESS_TOKEN_GIAY,
             NguoiDung    =  new NguoiDungInfo
             {
                 Id              = user.Mand,
                 SoDienThoai     = user.SoDienThoai,
-                NgayTao         = user.NgayTao,
                 LanDangNhapCuoi = user.LanDangNhapCuoi,
                 Holot           = user.Holot ?? string.Empty,
                 Ten             = user.Ten ?? string.Empty,

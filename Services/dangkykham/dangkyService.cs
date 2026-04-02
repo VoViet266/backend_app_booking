@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using his_backend.Models;
 using his_backend.DTOs;
 using his_backend.Common;
+using Hangfire;
+using his_backend.Services;
 
 namespace his_backend.Services.dangkykham;
 
@@ -92,22 +94,22 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
         await _db.SaveChangesAsync();
     }
 
-    if (req.Mabs != null && req.TimeSlot != null)
-    {
-        var timeSlotUtc = req.TimeSlot.Value.UtcDateTime;
+    // if (req.Mabs != null && req.TimeSlot != null)
+    // {
+    //     var timeSlotUtc = req.TimeSlot.Value.UtcDateTime;
 
-        var trungLich = await _db.DangKyKhams.AnyAsync(x =>
-            x.Mabs == req.Mabs &&
-            x.Ngay == req.Ngay &&
-            x.MaCk == req.MaCk &&
-            x.TimeSlot == timeSlotUtc &&
-            x.TrangThai != 2 &&
-            !x.Xoa);
+    //     var trungLich = await _db.DangKyKhams.AnyAsync(x =>
+    //         x.Mabs == req.Mabs &&
+    //         x.Ngay == req.Ngay &&
+    //         x.MaCk == req.MaCk &&
+    //         x.TimeSlot == timeSlotUtc &&
+    //         x.TrangThai != 2 &&
+    //         !x.Xoa);
 
-        if (trungLich)
-            return ServiceResult<DatLichKhamResponse>.Fail(
-                "Khung giờ này đã được đặt", 409);
-    }
+    //     if (trungLich)
+    //         return ServiceResult<DatLichKhamResponse>.Fail(
+    //             "Khung giờ này đã được đặt", 409);
+    // }
 
     
     var dangKy = new DangKyKham
@@ -155,6 +157,25 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
     _db.DangKyKhams.Add(dangKy);
     await _db.SaveChangesAsync();
 
+  if (userId.HasValue && req.TimeSlot.HasValue)
+{
+    var timeSlotStr = req.TimeSlot.Value.ToString("HH:mm dd/MM/yyyy");
+    // 1. Lấy ra cái "Ngày" khám (đưa giờ phút giây về 00:00:00)
+    DateTime ngayKham = req.TimeSlot.Value.Date; 
+
+    // 2. Tính thời gian báo: Lùi 1 ngày và cộng lên 9 tiếng (Thành 9h00 sáng hôm trước)
+    DateTime thoiGianThongBao = ngayKham.AddDays(-1).AddHours(10);
+    var scheduleTime = new DateTimeOffset(thoiGianThongBao);
+
+    // 3. Đặt lịch nếu thời gian chưa trôi qua
+    if (scheduleTime > DateTimeOffset.UtcNow)
+    {
+        BackgroundJob.Schedule<INotificationService>(   
+            ns => ns.SendReminderAsync(userId.Value, timeSlotStr),
+            scheduleTime
+        );
+    }
+}
 
     var res = new DatLichKhamResponse
     {
@@ -238,6 +259,7 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
             MaCk          = dk.MaCk,
             TenCk         = tenCkDict.GetValueOrDefault(dk.MaCk),
             Mabs          = dk.Mabs,
+            Cmnd          = dk.Cmnd,
             TenBacSi      = tenBacSiDict.GetValueOrDefault(dk.Mabs),
             TrangThai     = dk.TrangThai,
             NgayDat       = dk.NgaySua,

@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
+using Microsoft.EntityFrameworkCore;
 namespace his_backend.Models;
 
-[Table("dmnhanvien", Schema = "benhnhan")]
+[Table("dmnhanvien", Schema = "current")]
 public class Dmnhanvien
 {
     [Key]
@@ -15,6 +15,9 @@ public class Dmnhanvien
 
     [Column("ten")]
     public string Ten { get; set; }
+
+    [Column("gioitinh")]
+    public decimal? Gioitinh { get; set; }
 
     [Column("madv")]
     public string Madv { get; set; }
