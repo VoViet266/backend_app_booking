@@ -35,7 +35,7 @@ public class DangkykbController : ControllerBase
                     .Select(e => e.ErrorMessage)), 400));
 
         var userId = LayUserId();
-        var result = await _dangkykbService.DatLichAsync(req, userId);
+        var result = await _dangkykbService.DatLichAsync(req, userId.Value);
 
         return result.Success
             ? Ok(result)
@@ -55,32 +55,16 @@ public class DangkykbController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{maDk:int}")]
-    [ProducesResponseType(typeof(ServiceResult<LichDaDatResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> LayChiTiet([FromRoute] int maDk)
+    
+
+  
+
+    [HttpGet("lich-theo-ngay/{ngay}")]
+    [ProducesResponseType(typeof(ServiceResult<List<LichDaDatResponse>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> LayLichTheoNgay([FromRoute] DateOnly ngay)
     {
-        var userId = LayUserId();
-        var result = await _dangkykbService.LayChiTietLichAsync(maDk, userId);
-
-        return result.Success
-            ? Ok(result)
-            : StatusCode(result.StatusCode, result);
-    }
-
-    [HttpPut("{maDk:int}/huy")]
-    [ProducesResponseType(typeof(ServiceResult<bool>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> HuyLich(
-        [FromRoute] int maDk,
-        [FromBody] HuyLichRequest req)
-    {
-        var userId = LayUserId();
-        var result = await _dangkykbService.HuyLichAsync(maDk, req, userId);
-
-        return result.Success
-            ? Ok(result)
-            : StatusCode(result.StatusCode, result);
+        var result = await _dangkykbService.LayLichDangKyTheoNgayAsync(ngay);
+        return Ok(result);
     }
 
     private int? LayUserId()

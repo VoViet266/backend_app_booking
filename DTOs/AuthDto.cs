@@ -55,6 +55,8 @@ public class DangNhapRequest
     public string? FcmToken { get; set; } = null!;
 
     public string? DeviceId { get; set; } = null!;
+
+
 }
 
 public class DoiMatKhauRequest

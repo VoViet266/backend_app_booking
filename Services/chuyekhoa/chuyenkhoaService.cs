@@ -21,23 +21,30 @@ public class chuyenkhoaService
             {
                 Mack             = ck.Mack,
                 TenCk            = ck.TenCk,
-                MoTaTrieuChung   = ck.MoTaTrieuChung
+                MoTaTrieuChung   = ck.MoTaTrieuChung,
+                ImageUrl         = ck.ImageUrl
             })
+            .Where(ck => ck.Mack != "00")
             .ToListAsync();
         return ServiceResult<List<ChuyenkhoaDto>>.Ok(danhSach);
     }
 
     public async Task<ServiceResult<ChuyenkhoaDto>> GetById(string? mack)
     {
-        var danhSach = await _db.Dmchuyenkhoas
+        var data = await _db.Dmchuyenkhoas
             .Where(ck => ck.Mack == mack)   
-            .Select(ck => new ChuyenkhoaDto
+            .Select(ck => new ChuyenkhoaDto 
             {
                 Mack             = ck.Mack,
                 TenCk            = ck.TenCk,
-                MoTaTrieuChung   = ck.MoTaTrieuChung
+                MoTaTrieuChung   = ck.MoTaTrieuChung,
+                ImageUrl         = ck.ImageUrl
             })
             .FirstOrDefaultAsync();
-        return ServiceResult<ChuyenkhoaDto>.Ok(danhSach);
+
+        if (data is null)
+            return ServiceResult<ChuyenkhoaDto>.Fail("Không tìm thấy chuyên khoa", 404);
+
+        return ServiceResult<ChuyenkhoaDto>.Ok(data);
     }
 }

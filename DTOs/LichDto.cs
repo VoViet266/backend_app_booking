@@ -2,9 +2,9 @@ namespace his_backend.DTOs;
 
 public class LichResponse
 {
-    public string id;
-    public string manv; 
-    public string tenbacsi;
-    public string ngaytruc;
-    public int loaitruc;
+    public required string id;
+    public required string manv; 
+    public required string tenbacsi;
+    public required DateTime ngaytruc;
+    public required int loaitruc;
 }

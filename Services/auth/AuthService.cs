@@ -67,7 +67,7 @@ public class AuthService : IAuthService
             // Tạo liên kết người dùng với hồ sơ
             var lienKet = new AppUserHoSo
             {
-                AppUserId    = user.Mand,
+                AppUserId    = user.Mand ?? 0,
                 HoSo         = hoSo,
                 QuanHe       = "ban_than",
                 LaMacDinh    = true,  // Đặt làm thông tin mặc định khi sử dụng app
@@ -125,11 +125,13 @@ public class AuthService : IAuthService
     //Tạo token mới mỗi lần đăng nhập 
     _db.Usertokens.Add(new Usertoken
     {
-        UserId = user.Mand,
+        UserId = user.Mand ?? 0,
         DeviceId = req.DeviceId,
         FcmToken = req.FcmToken,
         RefreshToken = refreshToken,
         RefreshTokenHetHan = DateTimeOffset.UtcNow.AddDays(REFRESH_TOKEN_NGAY),
+        CreatedAt = DateTime.UtcNow,
+        
     });
 
     var activeTokens = await _db.Usertokens
@@ -185,8 +187,8 @@ public class AuthService : IAuthService
                 "Refresh token không hợp lệ hoặc đã hết hạn, vui lòng đăng nhập lại", 401);
 
         var userApp = await _db.AppUsers.FindAsync(user.UserId);
-        if (!userApp.IsActive)
-            return ServiceResult<DangNhapResponse>.Fail("Tài khoản đã bị khoá", 401);
+        if (userApp is null || !userApp.IsActive)
+            return ServiceResult<DangNhapResponse>.Fail("Tài khoản đã bị khoá hoặc không tồn tại", 401);
 
         var newAccess  = _jwt.TaoAccessToken(userApp);
         var newRefresh = _jwt.TaoRefreshToken();
@@ -247,10 +249,8 @@ public class AuthService : IAuthService
                 Id              = user.Mand,
                 SoDienThoai     = user.SoDienThoai,
                 LanDangNhapCuoi = user.LanDangNhapCuoi,
-                Holot           = user.Holot ?? string.Empty,
-                Ten             = user.Ten ?? string.Empty,
-                
-                
+                Holot           = user.Holot,
+                Ten             = user.Ten,
             }
         };
 }

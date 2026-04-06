@@ -4,15 +4,15 @@ namespace his_backend.DTOs;
 
 public class NguoiDungInfo
 {
-    public int      Id              { get; set; }
-    public string   SoDienThoai     { get; set; } = null!;
-    public DateTimeOffset NgayTao         { get; set; }
+    public int?      Id              { get; set; }
+    public required string   SoDienThoai     { get; set; } 
+    public DateTimeOffset? NgayTao         { get; set; }
     public DateTimeOffset? LanDangNhapCuoi { get; set; }
-    public string   Holot           { get; set; } = null!;
-    public string   Ten             { get; set; } = null!;
+    public required string   Holot           { get; set; } 
+    public required string   Ten             { get; set; } 
     public DateOnly?  Ngaysinh        { get; set; }
     public decimal?  Gioitinh        { get; set; }
-    public string   Cmnd            { get; set; } = null!;
-
+    public string?   Cmnd            { get; set; } 
+    
 }
 

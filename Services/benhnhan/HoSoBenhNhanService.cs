@@ -311,7 +311,7 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         Gioitinh = lk.HoSo.Gioitinh,
         Diachi = lk.HoSo.Diachi,
         Sodienthoai = lk.HoSo.Sodienthoai,
-        Cmnd = lk.HoSo.Cmnd,
+        Cmnd = lk.HoSo.Cmnd ?? "",
         Ngaycap = lk.HoSo.Ngaycap,
         Noicap = lk.HoSo.Noicap,
         Maloaigiayto = lk.HoSo.Maloaigiayto,

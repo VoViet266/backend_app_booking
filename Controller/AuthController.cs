@@ -48,13 +48,13 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> DangNhap([FromBody] DangNhapRequest req)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ServiceResult<DangNhapResponse>.Fail("Thông tin không hợp lệ"));
+            return Unauthorized(ServiceResult<DangNhapResponse>.Fail("Thông tin không hợp lệ"));
 
         var result = await _authService.DangNhapAsync(req);
         if (result.Success && result.Data != null)
         {   
 
-            await _authService.SaveDeviceTokenAsync(result.Data.NguoiDung.Id, req.DeviceId, req.FcmToken);
+            await _authService.SaveDeviceTokenAsync(result.Data.NguoiDung.Id ?? 0, req.DeviceId ?? "", req.FcmToken ?? "");
         }
         return result.Success
             ? Ok(ServiceResult<DangNhapResponse>.Ok(result.Data!))

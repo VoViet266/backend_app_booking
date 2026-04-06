@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using his_backend.Models;
 using his_backend.DTOs;
 using his_backend.Common;
-using Hangfire;
 using his_backend.Services;
 
 namespace his_backend.Services.dangkykham;
@@ -12,10 +11,11 @@ public interface IDangkykbService
 {
     Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
         DatLichKhamRequest req,
-        int? userId = null);
+        int userId);
     Task<ServiceResult<List<LichDaDatResponse>>> LayDanhSachLichAsync(int userId);
-    Task<ServiceResult<LichDaDatResponse>> LayChiTietLichAsync(int maDk, int? userId = null);
-    Task<ServiceResult<bool>> HuyLichAsync(int maDk, HuyLichRequest req, int? userId = null);
+    Task<ServiceResult<LichDaDatResponse>> LayChiTietLichAsync(int maDk, int userId);
+    Task<ServiceResult<bool>> HuyLichAsync(int maDk, HuyLichRequest req, int userId);
+    Task<ServiceResult<List<LichDaDatResponse>>> LayLichDangKyTheoNgayAsync(DateOnly ngay);
 }
 
 
@@ -31,7 +31,7 @@ public class DangkykbService : IDangkykbService
     }
 public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
     DatLichKhamRequest req,
-    int? userId = null)
+    int userId)
 {
     var now = DateTime.UtcNow;
 
@@ -116,7 +116,7 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
     {
         Mandk = benhNhan.Id,
         Mapk = req.Mapk,
-        Mabs = req.Mabs,
+        Mabs = req.Mabs!,
         MaCk = req.MaCk,
 
         Hoten = req.HoTen,
@@ -130,7 +130,7 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
         DiachiQh = req.DiachiQh ?? "",
 
         Ngaysinh = req.Ngaysinh,
-        TimeSlot = req.TimeSlot?.UtcDateTime ?? now,
+        TimeSlot = req.TimeSlot.Value.UtcDateTime,
         Ngay = req.Ngay,
         NgaySua = now,
 
@@ -157,26 +157,6 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
     _db.DangKyKhams.Add(dangKy);
     await _db.SaveChangesAsync();
 
-  if (userId.HasValue && req.TimeSlot.HasValue)
-{
-    var timeSlotStr = req.TimeSlot.Value.ToString("HH:mm dd/MM/yyyy");
-    // 1. Lấy ra cái "Ngày" khám (đưa giờ phút giây về 00:00:00)
-    DateTime ngayKham = req.TimeSlot.Value.Date; 
-
-    // 2. Tính thời gian báo: Lùi 1 ngày và cộng lên 9 tiếng (Thành 9h00 sáng hôm trước)
-    DateTime thoiGianThongBao = ngayKham.AddDays(-1).AddHours(10);
-    var scheduleTime = new DateTimeOffset(thoiGianThongBao);
-
-    // 3. Đặt lịch nếu thời gian chưa trôi qua
-    if (scheduleTime > DateTimeOffset.UtcNow)
-    {
-        BackgroundJob.Schedule<INotificationService>(   
-            ns => ns.SendReminderAsync(userId.Value, timeSlotStr),
-            scheduleTime
-        );
-    }
-}
-
     var res = new DatLichKhamResponse
     {
         MaDk = dangKy.MaDk,
@@ -186,7 +166,7 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
         TimeSlot = req.TimeSlot,
         MaCk = dangKy.MaCk,
         TenCk = chuyenKhoa.TenCk,
-        Mabs = dangKy.Mabs,
+        Mabs = dangKy.Mabs!,
         TenBacSi = tenBacSi,
         TrangThai = "Chờ xác nhận",
         NgayDat = now
@@ -258,9 +238,9 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
             TimeSlot      = new DateTimeOffset(dk.TimeSlot, TimeSpan.Zero),
             MaCk          = dk.MaCk,
             TenCk         = tenCkDict.GetValueOrDefault(dk.MaCk),
-            Mabs          = dk.Mabs,
+            Mabs          = dk.Mabs!,
             Cmnd          = dk.Cmnd,
-            TenBacSi      = tenBacSiDict.GetValueOrDefault(dk.Mabs),
+            TenBacSi      = tenBacSiDict.GetValueOrDefault(dk.Mabs!),
             TrangThai     = dk.TrangThai,
             NgayDat       = dk.NgaySua,
             GhiChu        = dk.GhiChu
@@ -271,7 +251,7 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
 
 
     public async Task<ServiceResult<LichDaDatResponse>> LayChiTietLichAsync(
-        int maDk, int? userId = null)
+        int maDk, int userId)
     {
         var dk = await _db.DangKyKhams
             .AsNoTracking()
@@ -308,14 +288,13 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
             TenCk         = tenCk,
             TrangThai     = dk.TrangThai, // 0: chờ xác nhận, 1: đã xác nhận, 2: đã hủy, 3: đã hoàn thành
             NgayDat       = dk.NgaySua,
-            Mabs          = dk.Mabs,
             TenBacSi      = tenBacSi,
             GhiChu        = dk.GhiChu, // lý do hủy
         });
     }
 
     public async Task<ServiceResult<bool>> HuyLichAsync(
-        int maDk, HuyLichRequest req, int? userId = null)
+        int maDk, HuyLichRequest req, int userId)
     {
         var dk = await _db.DangKyKhams
             .FirstOrDefaultAsync(d => d.MaDk == maDk && !d.Xoa);
@@ -345,6 +324,58 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
         _logger.LogInformation("Hủy lịch MaDk={MaDk} - Lý do: {LyDo}", maDk, req.LyDo);
 
         return ServiceResult<bool>.Ok(true, "Hủy lịch thành công");
+    }
+
+    public async Task<ServiceResult<List<LichDaDatResponse>>> LayLichDangKyTheoNgayAsync(DateOnly ngay)
+    {
+        var query = _db.DangKyKhams
+            .AsNoTracking()
+            .Where(dk => !dk.Xoa && dk.Ngay == ngay && dk.TrangThai == 1); // Chỉ lấy lịch đã xác nhận
+
+        var danhSach = await query
+            .OrderBy(dk => dk.TimeSlot)
+            .ToListAsync();
+
+        // Lấy tên chuyên khoa
+        var maCkList = danhSach.Select(d => d.MaCk).Distinct().ToList();
+        var tenCkDict = await _db.Dmchuyenkhoas
+            .AsNoTracking()
+            .Where(ck => maCkList.Contains(ck.Mack))
+            .ToDictionaryAsync(ck => ck.Mack, ck => ck.TenCk);
+
+        // Lấy tên bác sĩ
+        var mabsList = danhSach.Select(d => d.Mabs).Distinct().ToList();
+        var tenBacSiDict = await _db.BacsiChuyenKhoas
+            .AsNoTracking()
+            .Include(b => b.NhanVien)
+            .Where(b => mabsList.Contains(b.Manv))
+            .ToDictionaryAsync(
+                b => b.Manv,
+                b => b.NhanVien != null
+                    ? $"{b.NhanVien.Holot} {b.NhanVien.Ten}".Trim()
+                    : null);
+
+        var result = danhSach.Select(dk => new LichDaDatResponse
+        {
+            MaDk          = dk.MaDk,
+            HoTen         = dk.Hoten,
+            Ngay          = dk.Ngay,
+            LoaiQh        = dk.LoaiQh,
+            TimeSlot      = new DateTimeOffset(dk.TimeSlot, TimeSpan.Zero),
+            MaCk          = dk.MaCk,
+            TenCk         = tenCkDict.GetValueOrDefault(dk.MaCk),
+            Mabs          = dk.Mabs!,
+            Cmnd          = dk.Cmnd,
+            TenBacSi      = tenBacSiDict.GetValueOrDefault(dk.Mabs!),
+            TrangThai     = dk.TrangThai,
+            NgayDat       = dk.NgaySua,
+            GhiChu        = dk.GhiChu,
+            DienThoaiQh   = dk.DienThoaiQh,
+            DiachiQh      = dk.DiachiQh,
+            HotenQh       = dk.HoTenQh
+        }).ToList();
+
+        return ServiceResult<List<LichDaDatResponse>>.Ok(result);
     }
 
     private static DatLichKhamResponse MapToResponse(

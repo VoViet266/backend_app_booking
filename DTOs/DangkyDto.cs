@@ -21,7 +21,7 @@ public class DatLichKhamRequest
         ErrorMessage = "Số điện thoại không hợp lệ")]
     public string? Sdt { get; set; }
 
-    [MaxLength(12)]
+    [MaxLength(12)] 
     public string? Cmnd { get; set; }
     
     public int Mandk { get; set; }

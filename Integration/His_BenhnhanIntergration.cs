@@ -53,7 +53,7 @@ public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
             join d in _appDbContext.Dmicds
                 on k.Maicd equals d.Maicd into dJoin
             from d in dJoin.DefaultIfEmpty() 
-            where mathe.Contains(p.Mathe) && k.Dakham == 3
+            where p.Mathe != null && mathe.Contains(p.Mathe) && k.Dakham == 3
             orderby k.Ngaykcb descending
             select new LichSuKhamDto
             {
@@ -103,7 +103,7 @@ public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
             from p in _appDbContext.Pshdxns
             join dm in _appDbContext.Dmthuocs
                 on p.Mahh equals dm.Mahh
-            where mabnList.Contains(p.Mabn)
+            where p.Mabn != null && mabnList.Contains(p.Mabn)
                   && p.Xoa != 1  // loại bỏ bản ghi đã xóa
             orderby p.Ngayhd, p.Mahh
             select new
@@ -131,9 +131,7 @@ public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
             .Select(g => new DotKhamDto
             {
                 Makb = "",
-                Ngaydk = g.Key.HasValue
-                    ? g.Key.Value.ToDateTime(TimeOnly.MinValue)
-                    : null,
+                Ngaydk = g.Key?.ToDateTime(TimeOnly.MinValue) ,
                 Donthuocs = g.Select(x => new DonthuocDto
                 {
                     Mahh     = x.Mahh    ?? "",
@@ -142,7 +140,8 @@ public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
                     Dvt      = x.Dvt     ?? "",
                     Soluong  = x.Soluong,
                     Cachuong = x.Cachuong ?? x.LieuDung ?? ""
-                }).DistinctBy(t => t.Mahh).ToList()
+                }).DistinctBy(t => t.Mahh).ToList(),
+                kqchuandoan = ""
             })
             .ToList();
 

@@ -30,6 +30,11 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Madt);
             entity.ToTable("dmdoituong", "current");
     });
+    modelBuilder.Entity<Dmchuyenkhoa>(entity =>
+    {
+            entity.HasKey(e => e.Mack);
+            entity.ToTable("dmchuyenkhoa", "datlichkham");
+    });
     modelBuilder.Entity<AppUser>(entity =>
     {
             entity.HasKey(e => e.Mand);
@@ -75,9 +80,12 @@ public class AppDbContext : DbContext
             });
     modelBuilder.Entity<Usertoken>(entity =>
     {
+            entity.HasKey(e => e.Id);
             entity.HasKey(e => e.UserId);
             entity.ToTable("app_usertoken", "datlichkham");
-
+             entity.Property(e => e.Id)
+                  .UseIdentityAlwaysColumn()
+                  .HasColumnName("id");
             entity.Property(e => e.UserId).HasColumnName("userid");
             entity.Property(e => e.DeviceId).HasColumnName("deviceid");
             entity.Property(e => e.FcmToken).HasColumnName("fcmtoken");
@@ -85,6 +93,13 @@ public class AppDbContext : DbContext
             entity.Property(e => e.RefreshTokenHetHan)
                   .HasColumnType("timestamp with time zone")
                   .HasColumnName("refresh_token_het_han");
+            entity.Property(e => e.CreatedAt)
+                  .HasDefaultValueSql("now()")
+                  .HasColumnType("timestamp with time zone")
+                  .HasColumnName("created_at");
+            entity.Property(e => e.IsActive)
+                  .HasDefaultValue(true)
+                  .HasColumnName("is_active");
             });
       modelBuilder.Entity<Dmnhanvien>(entity =>
       {
@@ -131,9 +146,9 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.ToTable("app_nguoibenhdangky", "datlichkham");
 
-            entity.Property(e => e.Id)
-                  .UseIdentityAlwaysColumn()
-                  .HasColumnName("id");
+                entity.Property(e => e.Id)
+                    .UseIdentityAlwaysColumn()
+                    .HasColumnName("id");
 
             entity.Property(e => e.Holot)
                   .IsRequired().HasMaxLength(255)

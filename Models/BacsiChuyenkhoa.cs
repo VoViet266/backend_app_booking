@@ -9,13 +9,13 @@ public class BacsiChuyenKhoa
 {
     [Key]
     [Column("id")]
-    public int Id { get; set; }
+    public required int Id { get; set; }
 
     [Column("manv")]
-    public string Manv { get; set; }
+    public required string Manv { get; set; }
 
     [Column("mack")]
-    public string Mack { get; set; }
+    public required string Mack { get; set; }
 
     public Dmnhanvien? NhanVien { get; set; }
 

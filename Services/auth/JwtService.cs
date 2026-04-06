@@ -35,14 +35,23 @@ public class JwtService : IJwtService
         var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-       var claims = new[]
+        if (user.SoDienThoai == null)
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Mand.ToString()),
-            new Claim(JwtRegisteredClaimNames.Sub, user.Mand.ToString()),
+            throw new Exception("SoDienThoai is required");
+        }
+
+        if (user.Mand == null)
+        {
+            throw new Exception("Mand is required");
+        }
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Mand.ToString() ?? ""),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Mand.ToString() ?? ""),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim("sdt", user.SoDienThoai ?? ""),
         };
-
         var token = new JwtSecurityToken(
             issuer:             issuer,
             audience:           audience,
