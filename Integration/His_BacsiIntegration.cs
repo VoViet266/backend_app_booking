@@ -10,14 +10,10 @@ interface IHis_BacsiIntegration
     Task<ServiceResult<List<BacsiDto>>> GetBacsiAsync();
     Task<ServiceResult<List<BacsiDto>>> GetBacsiTheoChuyenKhoaAsync(string mack);
 }   
-public class His_BacsiIntegration : IHis_BacsiIntegration
+public class His_BacsiIntegration(AppDbContext db) : IHis_BacsiIntegration
 {
-    private readonly AppDbContext db;
-    
-    public His_BacsiIntegration(AppDbContext db)
-    {
-        this.db = db;
-    }
+    private readonly AppDbContext db = db;
+
     public async Task<ServiceResult<List<BacsiDto>>> GetBacsiAsync()
     {
         var data = await db.BacsiChuyenKhoas

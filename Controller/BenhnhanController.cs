@@ -3,30 +3,23 @@ using his_backend.Models;
 using his_backend.Common;
 using Microsoft.AspNetCore.Mvc;
 using his_backend.Services;
-
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace his_backend.Controller;
 
 [ApiController]
 [Route("api/nguoibenh")]
-public class BenhnhanController : ControllerBase
+public class BenhnhanController(DonthuocService donthuocService, AppDbContext appDbContext, ILogger<BenhnhanController> logger, HoSoBenhNhanService hoSoService) : ControllerBase
 {
     
-    private readonly AppDbContext _appDbContext;
-    private readonly ILogger<BenhnhanController> _logger;
-    private readonly HoSoBenhNhanService _hoSoService;
+    private readonly AppDbContext _appDbContext = appDbContext;
+    private readonly ILogger<BenhnhanController> _logger = logger;
+    private readonly HoSoBenhNhanService _hoSoService = hoSoService;
 
-    private readonly DonthuocService _donthuocService;
-
-    public BenhnhanController( DonthuocService donthuocService, AppDbContext appDbContext, ILogger<BenhnhanController> logger, HoSoBenhNhanService hoSoService)
-    {
-        _appDbContext = appDbContext;
-        _logger = logger;
-        _hoSoService = hoSoService;
-        _donthuocService = donthuocService;
-    }
+    private readonly DonthuocService _donthuocService = donthuocService;
 
     [HttpPost("them-ho-so")]
+    [EnableRateLimiting("normal")]
     public async Task<IActionResult> ThemBenhnhan(ThemHosoRequest request)
     {
         if (!ModelState.IsValid)
@@ -47,6 +40,7 @@ public class BenhnhanController : ControllerBase
     
 
     [HttpGet("lich-su-kham/{mathe}")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<List<LichSuKhamResponse>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<List<LichSuKhamResponse>>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetLichSuKhamBn(string mathe)
@@ -59,6 +53,7 @@ public class BenhnhanController : ControllerBase
 
 
     [HttpGet("toa-thuoc/{mathe}")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<List<DotKhamDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<List<DotKhamDto>>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetToaThuocTheoLichSuKham(string mathe)
@@ -73,6 +68,7 @@ public class BenhnhanController : ControllerBase
     /// Lấy chi tiết đơn thuốc của 1 đợt khám cụ thể
     /// </summary>
     [HttpGet("don-thuoc/{makb}")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<List<DonthuocDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<List<DonthuocDto>>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetChiTietDonThuoc(string makb)

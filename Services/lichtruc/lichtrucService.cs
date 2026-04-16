@@ -13,13 +13,10 @@ public interface ILichtrucService
     // Task<Lichtruc> GetbyMabsAndNgayAndThu(string mabs, DateOnly ngay, int thu);
 }
 
-public class LichtrucService : ILichtrucService
+public class LichtrucService(AppDbContext context) : ILichtrucService
 {
-    private readonly AppDbContext _context;
-    public LichtrucService(AppDbContext context)
-    {
-        _context = context;
-    }
+    private readonly AppDbContext _context = context;
+
     public async Task<List<Lichtruc>> GetAll()
     {
         return await _context.Lichtrucs.ToListAsync();

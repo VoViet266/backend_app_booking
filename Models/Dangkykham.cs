@@ -8,12 +8,12 @@ namespace his_backend.Models;
         public int MaDk { get; set; }   
         public int? Mapk { get; set; }
         public int Mandk { get; set; }
-        public string Mabs { get; set; } = null!;
-        public string MaCk { get; set; } = null!;
+        public string? Mabs { get; set; } 
+        public string? MaCk { get; set; } 
         public string Hoten {get; set;} = null!;         
         public string Diachi {get; set;} = null!;
         public string Sdt {get; set;} = null!;
-        public string Cmnd {get; set;} = null!;
+        public string Cmnd {get; set;} = null!; 
         public string LoaiQh{get; set;} = null!;
         public string HoTenQh { get; set; } = null!;
         public string DienThoaiQh { get; set; } = null!;

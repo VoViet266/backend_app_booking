@@ -13,13 +13,9 @@ public interface IHis_BenhnhanIntegration
     Task<ServiceResult<List<DonthuocDto>>> GetChiTietDonThuocAsync(string makb);
 }
 
-public class His_BenhnhanIntegration : IHis_BenhnhanIntegration
+public class His_BenhnhanIntegration(AppDbContext appDbContext) : IHis_BenhnhanIntegration
 {
-    private readonly AppDbContext _appDbContext;
-    public His_BenhnhanIntegration(AppDbContext appDbContext)
-    {
-        _appDbContext = appDbContext;
-    }
+    private readonly AppDbContext _appDbContext = appDbContext;
 
     public async Task<ServiceResult<List<DmbenhnhanDto>>> GetBenhnhanAsync()
     {

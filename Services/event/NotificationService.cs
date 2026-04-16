@@ -8,13 +8,9 @@ namespace his_backend.Services
         Task SendBulkNotificationAsync(List<string> fcmTokens, string title, string body);
     }
 
-    public class NotificationService : INotificationService
+    public class NotificationService(AppDbContext dbContext) : INotificationService
     {
-        private readonly AppDbContext _dbContext;
-        public NotificationService(AppDbContext dbContext)
-        {
-            _dbContext = dbContext;
-        }
+        private readonly AppDbContext _dbContext = dbContext;
 
         public async Task SendNotificationAsync(string fcmToken, string title, string body)
         {

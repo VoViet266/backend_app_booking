@@ -69,6 +69,17 @@ public class DoiMatKhauRequest
     public string MatKhauMoi { get; set; } = null!;
 }
 
+public class QuenMatKhauRequest
+{
+    [Required(ErrorMessage = "Số điện thoại không được để trống")]
+    public string SoDienThoai { get; set; } = null!;
+
+
+    [Required(ErrorMessage = "Mật khẩu mới không được để trống")]
+    [MinLength(6, ErrorMessage = "Mật khẩu mới tối thiểu 6 ký tự")]
+    public string MatKhauMoi { get; set; } = null!;
+}
+
 public class RefreshTokenRequest
 {
     [Required(ErrorMessage = "Refresh token không được để trống")]
@@ -80,6 +91,7 @@ public class DangNhapResponse
     public string AccessToken  { get; set; } = null!;
     public int ExpiresIn { get; set; }
     public NguoiDungInfo NguoiDung { get; set; } = null!;
+    public string RefreshToken { get; set; } = null!;
 }
 
 
@@ -97,8 +109,6 @@ public class DangKyRequest
     public string Cmnd { get; set; } = null!;
 
     public string? Token    { get; set; }  
-
-
 
     public string? Holot { get; set; } = null!;
 

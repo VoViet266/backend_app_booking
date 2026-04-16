@@ -2,19 +2,16 @@ namespace his_backend.Controller;
 
 using Microsoft.AspNetCore.Mvc;
 using his_backend.Services;
-using his_backend.Models;
-using his_backend.Common;
+using Microsoft.AspNetCore.RateLimiting;
 
 [ApiController]
 [Route("api/bacsi")]
-public class BacsiController : ControllerBase
+public class BacsiController(IBacsiService bacsiService) : ControllerBase
 {
-    private readonly IBacsiService _bacsiService;
-    public BacsiController(IBacsiService bacsiService)
-    {
-        _bacsiService = bacsiService;
-    }   
+    private readonly IBacsiService _bacsiService = bacsiService;
+
     [HttpGet("lay-danh-sach-bac-si")]
+    [EnableRateLimiting("normal")]
     public async Task<IActionResult> GetBacsiAsync()
     {   
         var result = await _bacsiService.GetBacsiAsync();
@@ -27,6 +24,7 @@ public class BacsiController : ControllerBase
 
     //lấy danh sách bác sĩ theo chuyên khoa
     [HttpGet("laybacsi_khoa/{mack}")]
+    [EnableRateLimiting("normal")]
     public async Task<IActionResult> GetBacsiTheoChuyenKhoaAsync( 
         [FromRoute] string mack
     )

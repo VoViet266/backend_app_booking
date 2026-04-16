@@ -4,7 +4,7 @@ namespace his_backend.DTOs;
 
 
 public class DatLichKhamRequest
-{
+{   
     [Required(ErrorMessage = "Họ tên không được để trống")]
     [MaxLength(255)]
     public string HoTen { get; set; } = null!;
@@ -23,16 +23,15 @@ public class DatLichKhamRequest
 
     [MaxLength(12)] 
     public string? Cmnd { get; set; }
-    
-    public int Mandk { get; set; }
-    public int Mapk { get; set; }
-    [Required(ErrorMessage = "Mã chuyên khoa không được để trống")]
-    [MaxLength(20)]
-    public string MaCk{ get; set; } = null!;
 
-    [Required(ErrorMessage = "Mã bác sĩ không được để trống")]
+    public int Mandk { get; set; }
+
+    public int Mapk { get; set; }
     [MaxLength(20)]
-    public string Mabs { get; set; } =   null!;
+    public string? MaCk{ get; set; } 
+
+    [MaxLength(20)]
+    public string? Mabs { get; set; } 
     
     [MaxLength(50)]
     public string? Mathe { get; set; }
@@ -46,7 +45,7 @@ public class DatLichKhamRequest
 
     [MaxLength(255)]
     public string? HotenQh { get; set; }
-   
+
     public DateOnly Ngay { get; set; }
 
     public DateTimeOffset? TimeSlot { get; set; }
@@ -64,10 +63,11 @@ public class DatLichKhamRequest
     public DateOnly Ngaysinh { get; set; }
     public DateOnly Ngay     { get; set; }
     public string Cmnd { get; set; } = null!;
+    public string? Sdt { get; set; }
     public DateTimeOffset? TimeSlot { get; set; }
-    public string MaCk      { get; set; } = null!;
+    public string? MaCk      { get; set; } 
     public string? TenCk    { get; set; }
-    public string   Mabs      { get; set; }
+    public string? Mabs      { get; set; }
     public string? TenBacSi { get; set; }
     public string TrangThai  { get; set; } = null!;
     public DateTime NgayDat  { get; set; }
@@ -82,12 +82,14 @@ public class LichDaDatResponse
     public int      MaDk       { get; set; }
     public string   HoTen      { get; set; } = null!;
     public DateOnly Ngay       { get; set; }
+    public string? Sdt { get; set; }
+    public DateOnly? Ngaysinh { get; set; }
+    public string? Cmnd { get; set; }
     public string LoaiQh { get; set; }
     public DateTimeOffset? TimeSlot { get; set; }
     public string   MaCk       { get; set; } = null!;
     public string?  TenCk      { get; set; }
     public string   Mabs       { get; set; }
-    public string Cmnd { get; set; } = null!;
     public string?  TenBacSi   { get; set; }
     public int   TrangThai  { get; set; }
     public DateTime NgayDat    { get; set; }

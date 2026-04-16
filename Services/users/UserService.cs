@@ -11,16 +11,10 @@ public interface IUserService
     Task<ServiceResult<NguoiDungInfo>> LayUser(int userId);
 }
 
-public class UserService : IUserService
+public class UserService(AppDbContext db, ILogger<UserService> logger) : IUserService
 {
-    private readonly AppDbContext _db;
-    private readonly ILogger<UserService> _logger;
-
-    public UserService(AppDbContext db, ILogger<UserService> logger)
-    {
-        _db     = db;
-        _logger = logger;
-    }
+    private readonly AppDbContext _db = db;
+    private readonly ILogger<UserService> _logger = logger;
 
     public async Task<ServiceResult<NguoiDungInfo>> LayThongTinAsync(int userId)
     {
@@ -60,8 +54,7 @@ public class UserService : IUserService
         return ServiceResult<NguoiDungInfo>.Ok(new NguoiDungInfo
         {
             SoDienThoai     = user.SoDienThoai,
-            Holot           = user.Holot ?? string.Empty,
-            Ten             = user.Ten ?? string.Empty,
+           
         });
     }
 

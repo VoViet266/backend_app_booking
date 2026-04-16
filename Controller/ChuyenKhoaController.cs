@@ -4,21 +4,17 @@ using his_backend.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-
+using Microsoft.AspNetCore.RateLimiting;
 namespace his_backend.Controllers;
 
 [ApiController]
 [Route("api/chuyenkhoa")]
-public class ChuyenKhoaController : ControllerBase
+public class ChuyenKhoaController(chuyenkhoaService chuyenkhoaService) : ControllerBase
 {
-    private readonly chuyenkhoaService _chuyenkhoaService;
-
-    public ChuyenKhoaController(chuyenkhoaService chuyenkhoaService)
-    {
-        _chuyenkhoaService = chuyenkhoaService;
-    }
+    private readonly chuyenkhoaService _chuyenkhoaService = chuyenkhoaService;
 
     [HttpGet("laydanhsach-chuyenkhoa")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<List<ChuyenkhoaDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<List<ChuyenkhoaDto>>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> LayDanhSachChuyenKhoa()
@@ -30,6 +26,7 @@ public class ChuyenKhoaController : ControllerBase
     }
 
     [HttpGet("chitiet-chuyenkhoa/{mack}")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<List<ChuyenkhoaDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<List<ChuyenkhoaDto>>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ChiTietChuyenKhoa([FromRoute] string mack)

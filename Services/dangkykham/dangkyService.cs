@@ -11,7 +11,7 @@ public interface IDangkykbService
 {
     Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
         DatLichKhamRequest req,
-        int userId);
+        int? userId);
     Task<ServiceResult<List<LichDaDatResponse>>> LayDanhSachLichAsync(int userId);
     Task<ServiceResult<LichDaDatResponse>> LayChiTietLichAsync(int maDk, int userId);
     Task<ServiceResult<bool>> HuyLichAsync(int maDk, HuyLichRequest req, int userId);
@@ -19,42 +19,54 @@ public interface IDangkykbService
 }
 
 
-public class DangkykbService : IDangkykbService
+public class DangkykbService(AppDbContext db, ILogger<DangkykbService> logger) : IDangkykbService
 {
-    private readonly AppDbContext _db;
-    private readonly ILogger<DangkykbService> _logger;
+    private readonly AppDbContext _db = db;
+    private readonly ILogger<DangkykbService> _logger = logger;
 
-    public DangkykbService(AppDbContext db, ILogger<DangkykbService> logger)
-    {
-        _db     = db;
-        _logger = logger;
-    }
-public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
+    public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
     DatLichKhamRequest req,
-    int userId)
+    int? userId)
 {
     var now = DateTime.UtcNow;
+    if (!req.TimeSlot.HasValue)
+        return ServiceResult<DatLichKhamResponse>.Fail("Thời gian khám không được để trống", 400);
 
-    var chuyenKhoa = await _db.Dmchuyenkhoas
-        .AsNoTracking()
-        .FirstOrDefaultAsync(x => x.Mack == req.MaCk);
-
-    if (chuyenKhoa == null)
-        return ServiceResult<DatLichKhamResponse>.Fail(
-            $"Chuyên khoa '{req.MaCk}' không tồn tại", 400);
-    string? tenBacSi = null;
-
-    if (req.Mabs != null)
+    // 1. Xử lý MaCk cho phép null
+    Dmchuyenkhoa? chuyenKhoa = null;
+    if (!string.IsNullOrEmpty(req.MaCk))
     {
-        var bacSi = await _db.BacsiChuyenKhoas
-            .Include(x => x.NhanVien)
-            .FirstOrDefaultAsync(x =>
-                x.Manv == req.Mabs.ToString() &&
-                x.Mack == req.MaCk);
+        chuyenKhoa = await _db.Dmchuyenkhoas
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Mack == req.MaCk);
+
+        if (chuyenKhoa == null)
+            return ServiceResult<DatLichKhamResponse>.Fail(
+                $"Chuyên khoa '{req.MaCk}' không tồn tại", 400);
+    }
+
+    // 2. Xử lý Mabs cho phép null và không phụ thuộc cứng vào MaCk
+    string? tenBacSi = null;
+    if (!string.IsNullOrEmpty(req.Mabs))
+    {
+        var query = _db.BacsiChuyenKhoas.Include(x => x.NhanVien).AsQueryable();
+        query = query.Where(x => x.Manv == req.Mabs.ToString());
+        
+        // Nếu có MaCk truyền vào thì mới bắt buộc bác sĩ phải thuộc chuyên khoa đó
+        if (!string.IsNullOrEmpty(req.MaCk))
+        {
+            query = query.Where(x => x.Mack == req.MaCk);
+        }
+
+        var bacSi = await query.FirstOrDefaultAsync();
 
         if (bacSi == null)
-            return ServiceResult<DatLichKhamResponse>.Fail(
-                "Bác sĩ không tồn tại hoặc không thuộc chuyên khoa", 400);
+        {
+            var errMsg = string.IsNullOrEmpty(req.MaCk) 
+                ? "Bác sĩ không tồn tại" 
+                : "Bác sĩ không tồn tại hoặc không thuộc chuyên khoa đã chọn";
+            return ServiceResult<DatLichKhamResponse>.Fail(errMsg, 400);
+        }
 
         tenBacSi = bacSi.NhanVien != null
             ? $"{bacSi.NhanVien.Holot} {bacSi.NhanVien.Ten}".Trim()
@@ -73,12 +85,14 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
         benhNhan = await _db.Nguoibenhdangkys
             .FirstOrDefaultAsync(x => x.Sodienthoai == req.Sdt);
     }
+    
     var parts = req.HoTen.Trim().Split(' ');
     string ten = parts.Last(); 
     string hoLot = string.Join(" ", parts.Take(parts.Length - 1));
+    
     if (benhNhan == null)
     {
-        benhNhan = new ()
+        benhNhan = new Nguoibenhdangky
         {
             Holot = hoLot ?? "", 
             Ten = ten ?? "",
@@ -94,30 +108,16 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
         await _db.SaveChangesAsync();
     }
 
+    // Phần check trùng lịch đã bị comment trong code gốc, bạn có thể uncomment nếu cần
     // if (req.Mabs != null && req.TimeSlot != null)
-    // {
-    //     var timeSlotUtc = req.TimeSlot.Value.UtcDateTime;
+    // ...
 
-    //     var trungLich = await _db.DangKyKhams.AnyAsync(x =>
-    //         x.Mabs == req.Mabs &&
-    //         x.Ngay == req.Ngay &&
-    //         x.MaCk == req.MaCk &&
-    //         x.TimeSlot == timeSlotUtc &&
-    //         x.TrangThai != 2 &&
-    //         !x.Xoa);
-
-    //     if (trungLich)
-    //         return ServiceResult<DatLichKhamResponse>.Fail(
-    //             "Khung giờ này đã được đặt", 409);
-    // }
-
-    
     var dangKy = new DangKyKham
     {
         Mandk = benhNhan.Id,
         Mapk = req.Mapk,
-        Mabs = req.Mabs!,
-        MaCk = req.MaCk,
+        Mabs = !string.IsNullOrEmpty(req.Mabs) ? req.Mabs : null,
+        MaCk = req.MaCk ?? "", // Lưu chuỗi rỗng nếu MaCk null
 
         Hoten = req.HoTen,
         Diachi = req.Diachi ?? "",
@@ -165,8 +165,8 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
         Ngay = dangKy.Ngay,
         TimeSlot = req.TimeSlot,
         MaCk = dangKy.MaCk,
-        TenCk = chuyenKhoa.TenCk,
-        Mabs = dangKy.Mabs!,
+        TenCk = chuyenKhoa?.TenCk ?? string.Empty, 
+        Mabs = dangKy.Mabs ?? "",
         TenBacSi = tenBacSi,
         TrangThai = "Chờ xác nhận",
         NgayDat = now
@@ -234,13 +234,15 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
             MaDk          = dk.MaDk,
             HoTen         = dk.Hoten,
             Ngay          = dk.Ngay,
+            Sdt           = dk.Sdt,
+            Cmnd          = dk.Cmnd,
+            Ngaysinh      = dk.Ngaysinh,
             LoaiQh        = dk.LoaiQh,
             TimeSlot      = new DateTimeOffset(dk.TimeSlot, TimeSpan.Zero),
-            MaCk          = dk.MaCk,
-            TenCk         = tenCkDict.GetValueOrDefault(dk.MaCk),
-            Mabs          = dk.Mabs!,
-            Cmnd          = dk.Cmnd,
-            TenBacSi      = tenBacSiDict.GetValueOrDefault(dk.Mabs!),
+            MaCk          = dk.MaCk ?? "",
+            TenCk         = tenCkDict.GetValueOrDefault(dk.MaCk ?? "") ,
+            Mabs          = dk.Mabs ?? "",
+            TenBacSi      = tenBacSiDict.GetValueOrDefault(dk.Mabs ?? ""),
             TrangThai     = dk.TrangThai,
             NgayDat       = dk.NgaySua,
             GhiChu        = dk.GhiChu
@@ -282,14 +284,18 @@ public async Task<ServiceResult<DatLichKhamResponse>> DatLichAsync(
             MaDk          = dk.MaDk,
             HoTen         = dk.Hoten,
             Ngay          = dk.Ngay,
+            Sdt           = dk.Sdt,
+            Cmnd          = dk.Cmnd,
+            Ngaysinh      = dk.Ngaysinh,
             LoaiQh        = dk.LoaiQh,
             TimeSlot      = new DateTimeOffset(dk.TimeSlot, TimeSpan.Zero),
-            MaCk          = dk.MaCk,
+            MaCk          = dk.MaCk ?? "",
             TenCk         = tenCk,
-            TrangThai     = dk.TrangThai, // 0: chờ xác nhận, 1: đã xác nhận, 2: đã hủy, 3: đã hoàn thành
-            NgayDat       = dk.NgaySua,
+            Mabs          = dk.Mabs ?? "",
             TenBacSi      = tenBacSi,
-            GhiChu        = dk.GhiChu, // lý do hủy
+            TrangThai     = dk.TrangThai,
+            NgayDat       = dk.NgaySua,
+            GhiChu        = dk.GhiChu
         });
     }
 

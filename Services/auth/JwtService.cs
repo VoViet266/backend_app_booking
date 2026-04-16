@@ -18,11 +18,9 @@ public interface IJwtService
     ClaimsPrincipal? LayClaimsTuToken(string token);
 }
 
-public class JwtService : IJwtService
+public class JwtService(IConfiguration config) : IJwtService
 {
-    private readonly IConfiguration _config;
-
-    public JwtService(IConfiguration config) => _config = config;
+    private readonly IConfiguration _config = config;
 
     public string TaoAccessToken(AppUser user)
     {

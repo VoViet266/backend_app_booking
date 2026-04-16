@@ -12,6 +12,7 @@ public interface IHoSoBenhNhanService
         int hoSoId,
         HoSoBenhNhan req
     );
-    Task<ServiceResult<bool>> XoaLienKetAsync(int userId, int hoSoId);
+    Task<ServiceResult<bool>> XoaHoSoAsync(int userId, int hoSoId);
     Task<ServiceResult<HoSoBenhNhanResponse>> DatMacDinhAsync(int userId, int hoSoId);
+
 }

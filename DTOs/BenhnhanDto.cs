@@ -32,7 +32,7 @@ public class HoSoBenhNhanResponse : HoSoBenhNhan
 
     public string? QuanHe { get; set; } 
 
-    public bool? LaMacDinh { get; set; }
+    public bool LaMacDinh { get; set; }
 
     public DateTimeOffset NgayLienKet { get; set; }
 }

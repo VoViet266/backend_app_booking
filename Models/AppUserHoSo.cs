@@ -16,7 +16,7 @@ public class AppUserHoSo
     public string QuanHe { get; set; } = "ban_than";
 
     /// <summary>Hồ sơ mặc định của user này không?</summary>
-    public bool LaMacDinh { get; set; } = false;
+    public bool LaMacDinh { get; set; } = false;    
 
     /// <summary>Ngày user này liên kết hồ sơ</summary>
     public DateTimeOffset NgayLienKet { get; set; } = DateTimeOffset.UtcNow;

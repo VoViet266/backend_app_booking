@@ -7,16 +7,11 @@ using System.Transactions;
 namespace his_backend.Services;
 
 
-public class HoSoBenhNhanService : IHoSoBenhNhanService
+public class HoSoBenhNhanService(AppDbContext db, ILogger<HoSoBenhNhanService> logger) : IHoSoBenhNhanService
 {
-    private readonly AppDbContext _db;
-    private readonly ILogger<HoSoBenhNhanService> _logger;
+    private readonly AppDbContext _db = db;
+    private readonly ILogger<HoSoBenhNhanService> _logger = logger;
 
-    public HoSoBenhNhanService(AppDbContext db, ILogger<HoSoBenhNhanService> logger)
-    {
-        _db = db;
-        _logger = logger;
-    }
     public async Task<ServiceResult<List<HoSoBenhNhanResponse>>> LayDanhSachAsync(int userId)
     {
         var lienKets = await _db.AppUserHoSos
@@ -53,7 +48,6 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     /// </summary>
     public async Task<ServiceResult<HoSoBenhNhan>> ThemHoSoAsync(int userId, ThemHosoRequest req)
     {
-        // 1. Kiểm tra user tồn tại
         var userExist = await _db.AppUsers.AnyAsync(u => u.Mand == userId);
         if (!userExist)
             return ServiceResult<HoSoBenhNhan>.Fail("Không tìm thấy tài khoản", 404);
@@ -68,7 +62,6 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
             hoSo = await _db.Nguoibenhdangkys.FirstOrDefaultAsync(x => x.Cmnd == cmnd);
 
-            // nếu tìm thấy hoSo thì hoSoCu = true
             if (hoSo != null)
             {
                 hoSoCu = true;
@@ -104,7 +97,6 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
                 _db.Nguoibenhdangkys.Add(hoSo);
             }
         }
-        // 3. Nếu không có CMND -- luôn tạo mới
         else
         {
             //
@@ -130,21 +122,33 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
             _db.Nguoibenhdangkys.Add(hoSo);
         }
 
-        // Nếu chọn mặc định - bỏ mặc định hồ sơ khác
-        if (req.LaMacDinh == true)
+      
+        var chuaCoHoSo = !await _db.AppUserHoSos.AnyAsync(lk => lk.AppUserId == userId);
+
+        bool seLaMacDinh;
+        if (chuaCoHoSo)
+        {
+            // Hồ sơ đầu tiên luôn là mặc định
+            seLaMacDinh = true;
+        }
+        else
+        {
+            // chỉ set mặc định nếu user chọn
+            seLaMacDinh = req.LaMacDinh == true;
+        }
+
+        if (seLaMacDinh)
             await BoPhuongMacDinh(userId);
 
-        // Tạo liên kết user - hồ sơ
-        // Tạo liên kết người dùng với hồ sơ
+
         var lienKet = new AppUserHoSo
         {
             AppUserId = userId,
             HoSo = hoSo,
             QuanHe = req.QuanHe ?? "ban_than",
-            LaMacDinh = req.LaMacDinh ?? false,  // Đặt làm thông tin mặc định khi sử dụng app
+            LaMacDinh = seLaMacDinh,
             NgayLienKet = DateTimeOffset.UtcNow,
         };
-
         if (hoSoCu)
         {
             lienKet.HoSoId = hoSo.Id; // Nếu là hồ sơ cũ, ta gán Id luôn
@@ -152,20 +156,9 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
         _db.AppUserHoSos.Add(lienKet);
         await _db.SaveChangesAsync();
-
-        // await Transaction.CommitAsync();
-
-        // 5. Load lại navigation để trả về
         await _db.Entry(lienKet)
             .Reference(x => x.HoSo)
             .LoadAsync();
-
-        _logger.LogInformation(
-            "User {UserId} liên kết hồ sơ #{HoSoId} ({HoTen}) - {TrangThai}",
-            userId,
-            hoSo.Id,
-            $"{hoSo.Holot} {hoSo.Ten}",
-            hoSoCu ? "hồ sơ cũ" : "hồ sơ mới");
 
         var msg = hoSoCu
             ? "Đã liên kết hồ sơ có sẵn"
@@ -234,23 +227,38 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     }
 
 
-    public async Task<ServiceResult<bool>> XoaLienKetAsync(int userId, int hoSoId)
+    public async Task<ServiceResult<bool>> XoaHoSoAsync(int userId, int hoSoId)
     {
-        var lienKet = await _db.AppUserHoSos
-            .FirstOrDefaultAsync(lk => lk.AppUserId == userId && lk.HoSoId == hoSoId);
+            var lienKet = await _db.AppUserHoSos
+                .FirstOrDefaultAsync(lk => lk.AppUserId == userId && lk.HoSoId == hoSoId);
 
-        if (lienKet is null)
-            return ServiceResult<bool>.Fail("Không tìm thấy hồ sơ", 404);
+            if (lienKet is null)
+                return ServiceResult<bool>.Fail("Không tìm thấy hồ sơ", 404);
 
-        _db.AppUserHoSos.Remove(lienKet);
-        await _db.SaveChangesAsync();
+            _db.AppUserHoSos.Remove(lienKet);
+            
+            var coLichKham = await _db.DangKyKhams.AnyAsync(dk => dk.Mandk == hoSoId);
+            
+            if (!coLichKham)
+            {
+                var hoSo = await _db.Nguoibenhdangkys
+                    .FirstOrDefaultAsync(h => h.Id == hoSoId);
+                
+                var coUserKhacLienKet = await _db.AppUserHoSos
+                    .AnyAsync(lk => lk.HoSoId == hoSoId && lk.AppUserId != userId);
 
-        _logger.LogInformation("User {UserId} bỏ hồ sơ #{HoSoId} khỏi danh sách", userId, hoSoId);
+                if (hoSo is not null && !coUserKhacLienKet)
+                {
+                    _db.Nguoibenhdangkys.Remove(hoSo);
+                }
+            }
 
-        return ServiceResult<bool>.Ok(true, "Đã xóa hồ sơ khỏi danh sách của bạn");
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation("User {UserId} xóa hồ sơ #{HoSoId} khỏi danh sách", userId, hoSoId);
+
+            return ServiceResult<bool>.Ok(true, "Đã xóa hồ sơ khỏi danh sách của bạn");
     }
-
-    // ─── Đặt mặc định ─────────────────────────────────────────────────────────
 
     public async Task<ServiceResult<HoSoBenhNhanResponse>> DatMacDinhAsync(int userId, int hoSoId)
     {
@@ -267,8 +275,6 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
         return ServiceResult<HoSoBenhNhanResponse>.Ok(MapToResponse(lienKet), "Đã đặt làm hồ sơ mặc định");
     }
-
-   
 
     private static Nguoibenhdangky TaoHoSoMoi(HoSoBenhNhan req) => new()
     {

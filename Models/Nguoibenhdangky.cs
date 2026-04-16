@@ -1,7 +1,7 @@
 namespace his_backend.Models;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations.Schema;
-[Table("app_nguoibenhdangky", Schema = "datlichkham")]
+[Table("app_hosos", Schema = "datlichkham")]
 public class Nguoibenhdangky
 {
     public int Id { get; set; }

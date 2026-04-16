@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 public partial class Lichtruc 
 {
     public int? id { get; set; }
-    public string? ngaytruc { get; set; }
+    public DateOnly? ngaytruc { get; set; }
     public string? manv { get; set; }
     public string? tenbacsi { get; set; }
     public int? loai_truc { get; set; }

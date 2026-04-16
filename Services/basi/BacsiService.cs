@@ -8,13 +8,10 @@ public interface IBacsiService
     Task<ServiceResult<List<BacsiDto>>> GetBacsiAsync();
     Task<ServiceResult<List<BacsiDto>>> GetBacsiTheoChuyenKhoaAsync(string mack);
 }
-class BacsiService : IBacsiService
+class BacsiService(IHis_BacsiIntegration his_BacsiIntegration) : IBacsiService
 {
-    private readonly IHis_BacsiIntegration _his_BacsiIntegration;
-    public BacsiService(IHis_BacsiIntegration his_BacsiIntegration)
-    {
-        _his_BacsiIntegration = his_BacsiIntegration;
-    }
+    private readonly IHis_BacsiIntegration _his_BacsiIntegration = his_BacsiIntegration;
+
     public async Task<ServiceResult<List<BacsiDto>>> GetBacsiAsync()
     {
         return await _his_BacsiIntegration.GetBacsiAsync();

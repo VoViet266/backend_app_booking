@@ -8,15 +8,16 @@ public class DmbenhnhanDto
     public decimal? Gioitinh { get; set; }
     public string? Diachi { get; set; }
     public string? Sdt { get; set; }
-    public string? Mathe { get;     set; }
+    public string? Mathe { get; set; }
 }
 public class LichSuKhamDto
 {
     public required string Makb       { get; set; }
     public DateTime? Ngaykham { get; set; }
-    public string? Maicd      { get; set; }  // Mã ICD-10
-    public string? TenvietIcd  { get; set; } // Tên tiếng Việt (dmicd.tenviet)
-}public class BenhNhanLichSuDto
+    public string? Maicd      { get; set; }  
+    public string? TenvietIcd  { get; set; } 
+}
+public class BenhNhanLichSuDto
 {
     public required string Mabn { get; set; }
     public required string Hoten { get; set; }

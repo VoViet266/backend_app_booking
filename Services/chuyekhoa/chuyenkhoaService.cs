@@ -5,14 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace his_backend.Services.chuyekhoa;
 
-public class chuyenkhoaService
+public class chuyenkhoaService(AppDbContext db)
 {
-    private readonly AppDbContext _db;
-
-    public chuyenkhoaService(AppDbContext db)
-    {
-        _db = db;
-    }
+    private readonly AppDbContext _db = db;
 
     public async Task<ServiceResult<List<ChuyenkhoaDto>>> GetAll()
     {

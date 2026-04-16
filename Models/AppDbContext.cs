@@ -2,13 +2,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace his_backend.Models;
 
-public class AppDbContext : DbContext
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
     public DbSet<AppUser> AppUsers { get; set; }
     public DbSet<Nguoibenhdangky> Nguoibenhdangkys { get; set; }
     public DbSet<AppUserHoSo> AppUserHoSos { get; set; }
     public DbSet<Dmchuyenkhoa> Dmchuyenkhoas { get; set; }
+    public DbSet<DmChiNhanh> Dmchinhanhs { get; set; }
     public DbSet<DangKyKham> DangKyKhams { get; set; }
     public DbSet<Dmnhanvien> Dmnhanviens { get; set; }
     public DbSet<Lichtruc> Lichtrucs { get; set; }
@@ -35,6 +35,11 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Mack);
             entity.ToTable("dmchuyenkhoa", "datlichkham");
     });
+    modelBuilder.Entity<DmChiNhanh>(entity =>
+    {
+            entity.HasKey(e => e.Macn);
+            entity.ToTable("app_dmchinhanh", "datlichkham");
+    });
     modelBuilder.Entity<AppUser>(entity =>
     {
             entity.HasKey(e => e.Mand);
@@ -51,14 +56,6 @@ public class AppDbContext : DbContext
             entity.Property(e => e.SoDienThoai)
                   .IsRequired().HasMaxLength(15)
                   .HasColumnName("sodienthoai");
-
-            entity.Property(e => e.Holot)
-                  .HasMaxLength(255)
-                  .HasColumnName("holot");
-
-            entity.Property(e => e.Ten)
-                  .HasMaxLength(255)
-                  .HasColumnName("ten");
 
             entity.Property(e => e.MatKhauHash)
                   .IsRequired().HasMaxLength(500)
@@ -81,8 +78,8 @@ public class AppDbContext : DbContext
     modelBuilder.Entity<Usertoken>(entity =>
     {
             entity.HasKey(e => e.Id);
-            entity.HasKey(e => e.UserId);
             entity.ToTable("app_usertoken", "datlichkham");
+            entity.HasIndex(e => e.UserId);
              entity.Property(e => e.Id)
                   .UseIdentityAlwaysColumn()
                   .HasColumnName("id");
@@ -117,7 +114,7 @@ public class AppDbContext : DbContext
             entity.ToTable("lichtrucbenhvien", "datlichkham");
 
             entity.Property(e=> e.id).HasColumnName("id");
-            entity.Property(e=> e.ngaytruc).HasColumnName("ngaytruc");
+            entity.Property(e=> e.ngaytruc).HasColumnName("ngaytruc").HasColumnType("date");
             entity.Property(e=> e.manv).HasColumnName("manv");
             entity.Property(e=> e.tenbacsi).HasColumnName("tenbacsi");
             entity.Property(e=> e.loai_truc).HasColumnName("loai_truc");
@@ -144,7 +141,7 @@ public class AppDbContext : DbContext
       modelBuilder.Entity<Nguoibenhdangky>(entity =>
       {     
             entity.HasKey(e => e.Id);
-            entity.ToTable("app_nguoibenhdangky", "datlichkham");
+            entity.ToTable("app_hosos", "datlichkham");
 
                 entity.Property(e => e.Id)
                     .UseIdentityAlwaysColumn()

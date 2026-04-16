@@ -2,13 +2,9 @@ using his_backend.Integration;
 using his_backend.Models;
 using his_backend.Common;
 
-public class DonthuocService : IHis_BenhnhanIntegration
+public class DonthuocService(IHis_BenhnhanIntegration his_BenhnhanIntegration) : IHis_BenhnhanIntegration
 {
-    private readonly IHis_BenhnhanIntegration _his_BenhnhanIntegration;
-    public DonthuocService(IHis_BenhnhanIntegration his_BenhnhanIntegration)
-    {
-        _his_BenhnhanIntegration = his_BenhnhanIntegration;
-    }
+    private readonly IHis_BenhnhanIntegration _his_BenhnhanIntegration = his_BenhnhanIntegration;
 
     public async Task<ServiceResult<List<DmbenhnhanDto>>> GetBenhnhanAsync()
     {

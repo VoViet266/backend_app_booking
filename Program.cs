@@ -8,11 +8,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 using Google.Apis.Auth.OAuth2;
 var builder = WebApplication.CreateBuilder(args);
 
-//database app
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -33,7 +34,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience         = true,
             ValidAudience            = audience,
             ValidateLifetime         = true,
-            ClockSkew                = TimeSpan.Zero   // Không cho phép trễ giờ
+            ClockSkew                = TimeSpan.Zero   
         };
     });
 
@@ -51,7 +52,35 @@ builder.Services.AddScoped<IDangkykbService, DangkykbService>();
 builder.Services.AddScoped<IHis_BenhnhanIntegration, His_BenhnhanIntegration>();
 builder.Services.AddScoped<IHis_BacsiIntegration, His_BacsiIntegration>();
 builder.Services.AddScoped<ILichtrucService, LichtrucService>();
+builder.Services.AddScoped<chinhanhService>();
 
+
+builder.Services.AddRateLimiter(options =>
+{
+    // API thường
+    options.AddTokenBucketLimiter("normal", opt =>
+    {
+        opt.TokenLimit = 100;
+        opt.TokensPerPeriod = 50;
+        opt.ReplenishmentPeriod = TimeSpan.FromSeconds(10);
+        opt.AutoReplenishment = true;
+    });
+
+    // Auth
+    options.AddFixedWindowLimiter("auth", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+    });
+
+    // Realtime nhẹ
+    options.AddTokenBucketLimiter("realtime", opt =>
+    {
+        opt.TokenLimit = 30;
+        opt.TokensPerPeriod = 10;
+        opt.ReplenishmentPeriod = TimeSpan.FromSeconds(5);
+    });
+});
 
 
 builder.Services.AddControllers();
@@ -97,6 +126,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+app.UseRateLimiter();
+//truy cập swagger tại /swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -112,4 +143,4 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+app.Run("http://0.0.0.0:8080");

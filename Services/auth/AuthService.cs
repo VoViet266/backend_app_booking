@@ -7,28 +7,22 @@ using Microsoft.Extensions.Logging;
 namespace his_backend.Services;
 
 
-public class AuthService : IAuthService
+public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> logger) : IAuthService
 {
-    private readonly AppDbContext            _db;
-    private readonly IJwtService             _jwt;
-    private readonly ILogger<AuthService>    _logger;
+    private readonly AppDbContext _db = db;
+    private readonly IJwtService _jwt = jwt;
+    private readonly ILogger<AuthService> _logger = logger;
 
     private const int REFRESH_TOKEN_NGAY      = 30;
-    private const int ACCESS_TOKEN_GIAY       = 60 * 60; 
-
-    public AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> logger)
-    {
-        _db     = db;
-        _jwt    = jwt;
-        _logger = logger;
-    }
+    //năm phút
+    private const int ACCESS_TOKEN_GIAY       = 5 * 60; //300 giây = 5 phút
 
     public async Task<ServiceResult<NguoiDungInfo>> DangKyAsync(DangKyRequest req)
     {
         var sdt = req.SoDienThoai.Trim();
 
-        bool daTonTai = await _db.AppUsers.AnyAsync(u => u.SoDienThoai == sdt);
-        if (daTonTai)
+        bool userExist = await _db.AppUsers.AnyAsync(u => u.SoDienThoai == sdt);
+        if (userExist)
             return ServiceResult<NguoiDungInfo>.Fail(
                 $"Số điện thoại {sdt} đã được đăng ký", 409);
 
@@ -40,9 +34,6 @@ public class AuthService : IAuthService
             {
                 SoDienThoai  = sdt,
                 MatKhauHash  = BCrypt.Net.BCrypt.HashPassword(req.MatKhau, workFactor: 12),
-                Holot        = req.Holot?.Trim(),
-                Ten          = req.Ten?.Trim(),
-                
             };
 
             _db.AppUsers.Add(user);
@@ -89,8 +80,7 @@ public class AuthService : IAuthService
                 Id              = user.Mand,
                 SoDienThoai     = user.SoDienThoai,
                 LanDangNhapCuoi = user.LanDangNhapCuoi,
-                Holot           = user.Holot ?? string.Empty,
-                Ten             = user.Ten ?? string.Empty,
+            
                 
 
             }, "Đăng ký tài khoản và tạo hồ sơ thành công", 201);
@@ -119,38 +109,44 @@ public class AuthService : IAuthService
         var accessToken  = _jwt.TaoAccessToken(user);
         var refreshToken = _jwt.TaoRefreshToken();
 
-    var token = await _db.Usertokens
-        .FirstOrDefaultAsync(t => t.UserId == user.Mand && t.DeviceId == req.DeviceId);
+        // Nếu thiết bị đã có token → cập nhật, không tạo mới
+        var token = await _db.Usertokens
+            .FirstOrDefaultAsync(t => t.UserId == user.Mand && t.DeviceId == req.DeviceId);
 
-    //Tạo token mới mỗi lần đăng nhập 
-    _db.Usertokens.Add(new Usertoken
-    {
-        UserId = user.Mand ?? 0,
-        DeviceId = req.DeviceId,
-        FcmToken = req.FcmToken,
-        RefreshToken = refreshToken,
-        RefreshTokenHetHan = DateTimeOffset.UtcNow.AddDays(REFRESH_TOKEN_NGAY),
-        CreatedAt = DateTime.UtcNow,
-        
-    });
-
-    var activeTokens = await _db.Usertokens
-    .Where(t => t.UserId == user.Mand)
-    .OrderByDescending(t => t.RefreshTokenHetHan)
-    .ToListAsync();
-
-
-    ///Xóa token cũ đi nếu quá 5 token
-    if (activeTokens.Count > 4) {
-        var tokensToRemove = activeTokens.Skip(4).ToList();
-        _db.Usertokens.RemoveRange(tokensToRemove);
-    }
+        if (token != null)
+        {
+            token.FcmToken = req.FcmToken;
+            token.RefreshToken = refreshToken;
+            token.RefreshTokenHetHan = DateTimeOffset.UtcNow.AddDays(REFRESH_TOKEN_NGAY);
+            token.CreatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            _db.Usertokens.Add(new Usertoken
+            {
+                UserId = user.Mand ?? 0,
+                DeviceId = req.DeviceId,
+                FcmToken = req.FcmToken,
+                RefreshToken = refreshToken,
+                RefreshTokenHetHan = DateTimeOffset.UtcNow.AddDays(REFRESH_TOKEN_NGAY),
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
 
         await _db.SaveChangesAsync();
 
-    _logger.LogInformation("Đăng nhập: {SDT} (userId={Id}, deviceId={DeviceId})", sdt, user.Mand, req.DeviceId);
+        var activeTokens = await _db.Usertokens
+            .Where(t => t.UserId == user.Mand)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync();
 
-        return ServiceResult<DangNhapResponse>.Ok(BuildDangNhapResponse(user, accessToken));
+        if (activeTokens.Count > 4)
+        {
+            _db.Usertokens.RemoveRange(activeTokens.Skip(4));
+            await _db.SaveChangesAsync();
+        }
+
+        return ServiceResult<DangNhapResponse>.Ok(BuildDangNhapResponse(user, accessToken, refreshToken));
     }
 
     public async Task SaveDeviceTokenAsync(int userId, string deviceId, string tokenfcm)
@@ -197,7 +193,7 @@ public class AuthService : IAuthService
         user.RefreshTokenHetHan = DateTimeOffset.UtcNow.AddDays(REFRESH_TOKEN_NGAY);
         await _db.SaveChangesAsync();
 
-        return ServiceResult<DangNhapResponse>.Ok(BuildDangNhapResponse(userApp, newAccess));
+        return ServiceResult<DangNhapResponse>.Ok(BuildDangNhapResponse(userApp, newAccess, newRefresh));
     }
 
     public async Task<ServiceResult<object>> DangXuatAsync(int userId)
@@ -237,20 +233,40 @@ public class AuthService : IAuthService
         return ServiceResult<object>.Ok(null!, "Đổi mật khẩu thành công, vui lòng đăng nhập lại");
     }
 
+    public async Task<ServiceResult<object>> QuenMatKhauAsync(QuenMatKhauRequest req)
+    {
+        var user = await _db.AppUsers.FirstOrDefaultAsync(u => u.SoDienThoai == req.SoDienThoai);
+        if (user is null)
+            return ServiceResult<object>.Fail("Không tìm thấy tài khoản với số điện thoại này");
+            
+        var userToken = await _db.Usertokens
+            .FirstOrDefaultAsync(t => t.UserId == user.Mand);
+        if (userToken is not null)
+        {
+            _db.Usertokens.Remove(userToken);
+            await _db.SaveChangesAsync();
+        }
+        user.MatKhauHash        = BCrypt.Net.BCrypt.HashPassword(req.MatKhauMoi, workFactor: 12);
+        await _db.SaveChangesAsync();
 
 
-    private DangNhapResponse BuildDangNhapResponse(AppUser user, string access) =>
+        return ServiceResult<object>.Ok(null!, "Đổi mật khẩu thành công, vui lòng đăng nhập lại");
+    }
+
+
+
+    private DangNhapResponse BuildDangNhapResponse(AppUser user, string access, string refresh) =>
         new()
         {
             AccessToken  = access,
+            RefreshToken = refresh,
             ExpiresIn    = ACCESS_TOKEN_GIAY,
             NguoiDung    =  new NguoiDungInfo
             {
-                Id              = user.Mand,
+                Id              = user.Mand,    
                 SoDienThoai     = user.SoDienThoai,
                 LanDangNhapCuoi = user.LanDangNhapCuoi,
-                Holot           = user.Holot,
-                Ten             = user.Ten,
+               
             }
         };
 }

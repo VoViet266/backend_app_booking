@@ -8,11 +8,12 @@ public class NguoiDungInfo
     public required string   SoDienThoai     { get; set; } 
     public DateTimeOffset? NgayTao         { get; set; }
     public DateTimeOffset? LanDangNhapCuoi { get; set; }
-    public required string   Holot           { get; set; } 
-    public required string   Ten             { get; set; } 
+    public string?   Holot           { get; set; } 
+    public string?   Ten             { get; set; } 
     public DateOnly?  Ngaysinh        { get; set; }
     public decimal?  Gioitinh        { get; set; }
     public string?   Cmnd            { get; set; } 
+
     
 }
 

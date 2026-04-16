@@ -4,26 +4,20 @@ using System.Security.Claims;
 using his_backend.Services;
 using his_backend.DTOs;
 using his_backend.Common;
-
+using Microsoft.AspNetCore.RateLimiting;
 namespace his_backend.Controller;
-
 [ApiController]
 [Route("api/user")]
 [Authorize]
-public class UserController : ControllerBase
+public class UserController(IUserService userService, IHoSoBenhNhanService hoSoService) : ControllerBase
 {
-    private readonly IUserService _userService;
-    private readonly IHoSoBenhNhanService _hoSoService;
-
-    public UserController(IUserService userService, IHoSoBenhNhanService hoSoService)
-    {
-        _userService = userService;
-        _hoSoService = hoSoService;
-    }
+    private readonly IUserService _userService = userService;
+    private readonly IHoSoBenhNhanService _hoSoService = hoSoService;
 
 
     /// <summary>Lấy thông tin tài khoản đang đăng nhập</summary>
     [HttpGet("laythongtin")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMe()
@@ -39,6 +33,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("layuser")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUser()
@@ -54,6 +49,7 @@ public class UserController : ControllerBase
 
 
     [HttpGet("ho-so")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<List<HoSoBenhNhanResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> LayDanhSachHoSo()
     {
@@ -66,6 +62,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("ho-so/{id:int}")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> LayChiTietHoSo(int id)
@@ -82,6 +79,7 @@ public class UserController : ControllerBase
 
 
     [HttpGet("ho-so/lay-danhsach-hosouser/{appuserid:int}")]
+    [EnableRateLimiting("normal")]
     public async Task<IActionResult> Layhosocuauser(int appuserid, int id)
     {
         var result = await _hoSoService.LayDanhSachAsync(appuserid);
@@ -89,6 +87,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost("ho-so")]
+    [EnableRateLimiting("realtime")]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status409Conflict)]
@@ -111,6 +110,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPatch("cap-nhat-ho-so")]
+    [EnableRateLimiting("realtime")]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CapNhatHoSo([FromBody] CapNhatHosoRequest req)
@@ -146,19 +146,23 @@ public class UserController : ControllerBase
     //         : StatusCode(result.StatusCode, ServiceResult<object>.Fail(result.Message));
     // }
 
-    [HttpDelete("ho-so/{id:int}")]
+    [HttpDelete("xoa-ho-so/{hoSoId}")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<bool>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> XoaHoSo(int id)
+    public async Task<IActionResult> XoaHoSo(int hoSoId)
     {
-        var userId = LayUserId();
-        if (userId is null)
-            return Unauthorized(ServiceResult<object>.Fail("Không xác định được người dùng"));
+        var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)
+            ?? User.FindFirst("sub");
+        if (claim is null || !int.TryParse(claim.Value, out var userId))
+            return Unauthorized(ServiceResult<bool>.Fail("Không xác định được người dùng"));
 
-        var result = await _hoSoService.XoaLienKetAsync(userId.Value, id);
-        return result.Success
-            ? Ok(result)
-            : NotFound(ServiceResult<object>.Fail(result.Message));
+        var result = await _hoSoService.XoaHoSoAsync(userId, hoSoId);
+            
+        if (!result.Success)
+            return StatusCode(result.StatusCode, result);
+
+        return Ok(result);
     }
     [HttpPatch("ho-so/{id:int}/mac-dinh")]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status200OK)]
