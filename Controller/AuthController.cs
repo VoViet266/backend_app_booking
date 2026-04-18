@@ -124,6 +124,23 @@ public class AuthController(IAuthService authService, ILogger<AuthController> lo
             : StatusCode(result.StatusCode, ServiceResult<object>.Fail(result.Message));
     }
 
+    [HttpPost("verify-account")]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(ServiceResult<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServiceResult<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> XacThucTaiKhoan([FromBody] VerifyAccountRequest req)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ServiceResult<object>.Fail("Thông tin không hợp lệ"));
+
+        var result = await _authService.verifyAccountAsync(req);
+        return result.Success
+            ? Ok(ServiceResult<object>.Ok(null!, result.Message))
+            : StatusCode(result.StatusCode, ServiceResult<object>.Fail(result.Message));
+    }
+
+
     private int? LayUserId()
     {
         var claim = User.FindFirst(ClaimTypes.NameIdentifier)

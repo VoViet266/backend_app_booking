@@ -60,10 +60,17 @@ public class DangkykbController(IDangkykbService dangkykbService) : ControllerBa
         var userId = LayUserId();
         if (userId is null)
             return Unauthorized(ServiceResult<LichDaDatResponse>.Fail("Chưa đăng nhập", 401));
-        var result = await _dangkykbService.LayChiTietLichAsync(id, userId.Value ) ;
+        var result = await _dangkykbService.LayChiTietLichAsync(id, userId.Value);
         return Ok(result);
     }
 
+    [HttpGet("get-slot-booked")]
+    [EnableRateLimiting("normal")]
+    public async Task<IActionResult> CheckExist([FromBody] GetSlotBooking req)
+    {
+        var result = await _dangkykbService.GetSlotBookingAsync(req.Mabs, req.Ngay);
+        return Ok(result);
+    }
 
     [HttpGet("lich-theo-ngay/{ngay}")]
     [EnableRateLimiting("normal")]

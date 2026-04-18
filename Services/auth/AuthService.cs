@@ -13,9 +13,9 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
     private readonly IJwtService _jwt = jwt;
     private readonly ILogger<AuthService> _logger = logger;
 
-    private const int REFRESH_TOKEN_NGAY      = 30;
+    private const int REFRESH_TOKEN_NGAY = 30;
     //năm phút
-    private const int ACCESS_TOKEN_GIAY       = 5 * 60; //300 giây = 5 phút
+    private const int ACCESS_TOKEN_GIAY = 5 * 60; //300 giây = 5 phút
 
     public async Task<ServiceResult<NguoiDungInfo>> DangKyAsync(DangKyRequest req)
     {
@@ -32,12 +32,14 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
             // 1. Tạo User
             var user = new AppUser
             {
-                SoDienThoai  = sdt,
-                MatKhauHash  = BCrypt.Net.BCrypt.HashPassword(req.MatKhau, workFactor: 12),
+
+                SoDienThoai = sdt,
+                Cmnd = req.Cmnd.Trim(),
+                MatKhauHash = BCrypt.Net.BCrypt.HashPassword(req.MatKhau, workFactor: 12),
             };
 
             _db.AppUsers.Add(user);
-            await _db.SaveChangesAsync(); 
+            await _db.SaveChangesAsync();
 
             // Tìm hoặc tạo hồ sơ bệnh nhân mới dựa vào CMND
             Nguoibenhdangky? hoSo = null;
@@ -47,22 +49,22 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
             {
                 hoSo = new Nguoibenhdangky
                 {
-                    Holot        = req.Holot?.Trim() ?? string.Empty,
-                    Ten          = req.Ten?.Trim() ?? string.Empty,
-                    Sodienthoai  = sdt,
-                    Cmnd         = req.Cmnd?.Trim(),
-                };  
+                    Holot = req.Holot?.Trim() ?? string.Empty,
+                    Ten = req.Ten?.Trim() ?? string.Empty,
+                    Sodienthoai = sdt,
+                    Cmnd = req.Cmnd?.Trim(),
+                };
                 _db.Nguoibenhdangkys.Add(hoSo);
             }
 
             // Tạo liên kết người dùng với hồ sơ
             var lienKet = new AppUserHoSo
             {
-                AppUserId    = user.Mand ?? 0,
-                HoSo         = hoSo,
-                QuanHe       = "ban_than",
-                LaMacDinh    = true,  // Đặt làm thông tin mặc định khi sử dụng app
-                NgayLienKet  = DateTimeOffset.UtcNow,
+                AppUserId = user.Mand ?? 0,
+                HoSo = hoSo,
+                QuanHe = "ban_than",
+                LaMacDinh = true,  // Đặt làm thông tin mặc định khi sử dụng app
+                NgayLienKet = DateTimeOffset.UtcNow,
             };
 
             if (hoSoCu)
@@ -77,11 +79,11 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
 
             return ServiceResult<NguoiDungInfo>.Ok(new NguoiDungInfo
             {
-                Id              = user.Mand,
-                SoDienThoai     = user.SoDienThoai,
+                Id = user.Mand,
+                SoDienThoai = user.SoDienThoai,
                 LanDangNhapCuoi = user.LanDangNhapCuoi,
-            
-                
+
+
 
             }, "Đăng ký tài khoản và tạo hồ sơ thành công", 201);
         }
@@ -92,10 +94,9 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
             return ServiceResult<NguoiDungInfo>.Fail("Đã có lỗi xảy ra, vui lòng thử lại sau.", 500);
         }
     }
-
     public async Task<ServiceResult<DangNhapResponse>> DangNhapAsync(DangNhapRequest req)
     {
-        var sdt  = req.SoDienThoai.Trim();
+        var sdt = req.SoDienThoai.Trim();
         var user = await _db.AppUsers.FirstOrDefaultAsync(u => u.SoDienThoai == sdt);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(req.MatKhau, user.MatKhauHash))
@@ -106,7 +107,7 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
             return ServiceResult<DangNhapResponse>.Fail(
                 "Tài khoản đã bị khoá, vui lòng liên hệ quản trị viên", 401);
 
-        var accessToken  = _jwt.TaoAccessToken(user);
+        var accessToken = _jwt.TaoAccessToken(user);
         var refreshToken = _jwt.TaoRefreshToken();
 
         // Nếu thiết bị đã có token → cập nhật, không tạo mới
@@ -148,9 +149,8 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
 
         return ServiceResult<DangNhapResponse>.Ok(BuildDangNhapResponse(user, accessToken, refreshToken));
     }
-
     public async Task SaveDeviceTokenAsync(int userId, string deviceId, string tokenfcm)
-    {   
+    {
         if (string.IsNullOrEmpty(deviceId) || string.IsNullOrEmpty(tokenfcm))
             return;
 
@@ -165,7 +165,7 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
         {
             _db.Usertokens.Add(new Usertoken
             {
-                UserId   = userId,
+                UserId = userId,
                 DeviceId = deviceId,
                 FcmToken = tokenfcm
             });
@@ -186,10 +186,10 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
         if (userApp is null || !userApp.IsActive)
             return ServiceResult<DangNhapResponse>.Fail("Tài khoản đã bị khoá hoặc không tồn tại", 401);
 
-        var newAccess  = _jwt.TaoAccessToken(userApp);
+        var newAccess = _jwt.TaoAccessToken(userApp);
         var newRefresh = _jwt.TaoRefreshToken();
 
-        user.RefreshToken       = newRefresh;
+        user.RefreshToken = newRefresh;
         user.RefreshTokenHetHan = DateTimeOffset.UtcNow.AddDays(REFRESH_TOKEN_NGAY);
         await _db.SaveChangesAsync();
 
@@ -209,36 +209,45 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
         _logger.LogInformation("Đăng xuất: userId={Id}", userId);
         return ServiceResult<object>.Ok(null!, "Đăng xuất thành công");
     }
-
-
     public async Task<ServiceResult<object>> DoiMatKhauAsync(int userId, DoiMatKhauRequest req)
     {
         var user = await _db.AppUsers.FindAsync(userId);
         if (user is null)
             return ServiceResult<object>.Fail("Không xác định được người dùng", 401);
 
+        // Kiểm tra mật khẩu cũ trước để xác thực quyền sở hữu
         if (!BCrypt.Net.BCrypt.Verify(req.MatKhauCu, user.MatKhauHash))
-            return ServiceResult<object>.Fail("Mật khẩu cũ không đúng");
-        var userToken = await _db.Usertokens
-            .FirstOrDefaultAsync(t => t.UserId == userId);
-        if (userToken is not null)
-        {
-            _db.Usertokens.Remove(userToken);
-            await _db.SaveChangesAsync();
-        }
-        user.MatKhauHash        = BCrypt.Net.BCrypt.HashPassword(req.MatKhauMoi, workFactor: 12);
-        await _db.SaveChangesAsync();
+            return ServiceResult<object>.Fail("Mật khẩu cũ không đúng", 401);
 
+        // Kiểm tra mật khẩu mới có trùng cũ không
+        if (BCrypt.Net.BCrypt.Verify(req.MatKhauMoi, user.MatKhauHash))
+            return ServiceResult<object>.Fail("Mật khẩu mới không được trùng với mật khẩu cũ", 400);
+
+        // Xóa toàn bộ Token để bắt buộc đăng nhập lại trên mọi thiết bị
+        await _db.Usertokens
+            .Where(t => t.UserId == userId)
+            .ExecuteDeleteAsync();
+
+        user.MatKhauHash = BCrypt.Net.BCrypt.HashPassword(req.MatKhauMoi, workFactor: 12);
+
+        await _db.SaveChangesAsync();
 
         return ServiceResult<object>.Ok(null!, "Đổi mật khẩu thành công, vui lòng đăng nhập lại");
     }
+    public async Task<ServiceResult<object>> verifyAccountAsync(VerifyAccountRequest req)
+    {
+        var user = await _db.AppUsers.FirstOrDefaultAsync(u => u.SoDienThoai == req.SoDienThoai && u.Cmnd == req.Cmnd);
+        if (user is null)
+            return ServiceResult<object>.Fail("Không tìm thấy tài khoản với số điện thoại và CMND này");
 
+        return ServiceResult<object>.Ok(null!, "Tài khoản hợp lệ");
+    }
     public async Task<ServiceResult<object>> QuenMatKhauAsync(QuenMatKhauRequest req)
     {
-        var user = await _db.AppUsers.FirstOrDefaultAsync(u => u.SoDienThoai == req.SoDienThoai);
+        var user = await _db.AppUsers.FirstOrDefaultAsync(u => u.SoDienThoai == req.SoDienThoai && u.Cmnd == req.Cmnd);
         if (user is null)
-            return ServiceResult<object>.Fail("Không tìm thấy tài khoản với số điện thoại này");
-            
+            return ServiceResult<object>.Fail("Không tìm thấy tài khoản với số điện thoại và CMND này");
+
         var userToken = await _db.Usertokens
             .FirstOrDefaultAsync(t => t.UserId == user.Mand);
         if (userToken is not null)
@@ -246,27 +255,25 @@ public class AuthService(AppDbContext db, IJwtService jwt, ILogger<AuthService> 
             _db.Usertokens.Remove(userToken);
             await _db.SaveChangesAsync();
         }
-        user.MatKhauHash        = BCrypt.Net.BCrypt.HashPassword(req.MatKhauMoi, workFactor: 12);
+        user.MatKhauHash = BCrypt.Net.BCrypt.HashPassword(req.MatKhauMoi, workFactor: 12);
         await _db.SaveChangesAsync();
 
 
         return ServiceResult<object>.Ok(null!, "Đổi mật khẩu thành công, vui lòng đăng nhập lại");
     }
 
-
-
-    private DangNhapResponse BuildDangNhapResponse(AppUser user, string access, string refresh) =>
+    private static DangNhapResponse BuildDangNhapResponse(AppUser user, string access, string refresh) =>
         new()
         {
-            AccessToken  = access,
+            AccessToken = access,
             RefreshToken = refresh,
-            ExpiresIn    = ACCESS_TOKEN_GIAY,
-            NguoiDung    =  new NguoiDungInfo
+            ExpiresIn = ACCESS_TOKEN_GIAY,
+            NguoiDung = new NguoiDungInfo
             {
-                Id              = user.Mand,    
-                SoDienThoai     = user.SoDienThoai,
+                Id = user.Mand,
+                SoDienThoai = user.SoDienThoai,
                 LanDangNhapCuoi = user.LanDangNhapCuoi,
-               
+
             }
         };
 }

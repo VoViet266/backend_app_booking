@@ -8,6 +8,8 @@ public class AppUser
     public int? Mand { get; set; }
     public required string SoDienThoai { get; set; } 
     public required string MatKhauHash { get; set; } 
+            
+    public required string Cmnd { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTimeOffset NgayTao { get; set; } = DateTime.UtcNow;
     public DateTimeOffset? LanDangNhapCuoi { get; set; }

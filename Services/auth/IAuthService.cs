@@ -17,6 +17,8 @@ public interface IAuthService
 
     Task<ServiceResult<object>> QuenMatKhauAsync(QuenMatKhauRequest req);
 
+    Task<ServiceResult<object>> verifyAccountAsync(VerifyAccountRequest req);
+
     Task SaveDeviceTokenAsync(int userId, string deviceId, string tokenfcm);
 
     

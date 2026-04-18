@@ -99,7 +99,6 @@ public class HoSoBenhNhanService(AppDbContext db, ILogger<HoSoBenhNhanService> l
         }
         else
         {
-            //
             hoSo = new Nguoibenhdangky
             {
                 Holot = req.Holot,

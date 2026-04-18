@@ -49,6 +49,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                   .IsUnique()
                   .HasDatabaseName("app_users_sdt_unique");
 
+            entity.HasIndex(e => e.Cmnd)
+                  .IsUnique()
+                  .HasDatabaseName("app_users_cmnd_unique");
+
+            entity.Property(e => e.Cmnd)
+                  .IsRequired().HasMaxLength(12)
+                  .HasColumnName("cmnd");
+
             entity.Property(e => e.Mand)
                   .HasColumnName("mand")
                   .UseIdentityAlwaysColumn();
