@@ -5,7 +5,7 @@ public class DotKhamDto
     public  DateTime? Ngaydk { get; set; }
     public required List<DonthuocDto> Donthuocs { get; set; }
 }
-public class DonthuocDto    
+public class DonthuocDto
 {
     public required string Mahh { get; set; } 
     public required string Tenhh { get; set; } 
@@ -19,9 +19,6 @@ public class DonthuocDto
     public string? Cachuong { get; set; } 
 
 }
-
-
-
 public class LichSuKhamResponse
 {
     public required string Mabn { get; set; } 

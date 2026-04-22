@@ -17,10 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-var jwtConfig  = builder.Configuration.GetSection("Jwt");
-var secretKey  = jwtConfig["SecretKey"]  ?? throw new InvalidOperationException("Thiếu Jwt:SecretKey trong appsettings");
-var issuer     = jwtConfig["Issuer"]     ?? "his-backend";
-var audience   = jwtConfig["Audience"]  ?? "his-app";
+var jwtConfig = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtConfig["SecretKey"] ?? throw new InvalidOperationException("Thiếu Jwt:SecretKey trong appsettings");
+var issuer = jwtConfig["Issuer"] ?? "his-backend";
+var audience = jwtConfig["Audience"] ?? "his-app";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -28,13 +28,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-            ValidateIssuer           = true,
-            ValidIssuer              = issuer,
-            ValidateAudience         = true,
-            ValidAudience            = audience,
-            ValidateLifetime         = true,
-            ClockSkew                = TimeSpan.Zero   
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ValidateIssuer = true,
+            ValidIssuer = issuer,
+            ValidateAudience = true,
+            ValidAudience = audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
         };
     });
 
@@ -46,7 +46,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IHoSoBenhNhanService, HoSoBenhNhanService>();
 builder.Services.AddScoped<HoSoBenhNhanService>();
 builder.Services.AddScoped<chuyenkhoaService>();
-builder.Services.AddScoped<IBacsiService, BacsiService>();  
+builder.Services.AddScoped<IBacsiService, BacsiService>();
 builder.Services.AddScoped<DonthuocService>();
 builder.Services.AddScoped<IDangkykbService, DangkykbService>();
 builder.Services.AddScoped<IHis_BenhnhanIntegration, His_BenhnhanIntegration>();
@@ -85,26 +85,10 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddControllers();
 
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
-{   
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title       = "HIS Backend API",
-        Version     = "v1",
-        Description = "API hệ thống thông tin bệnh viện"
-    });
-
-    // Thêm nút Authorize trong Swagger UI
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name         = "Authorization",
-        Type         = SecuritySchemeType.Http,
-        Scheme       = "Bearer",
-        BearerFormat = "JWT",
-        In           = ParameterLocation.Header,
-        Description  = "Nhập JWT token. Ví dụ: Bearer {token}"
-    });
+{
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -116,31 +100,27 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
+builder.WebHost.ConfigureKestrel(options =>
+{
+    // Giới hạn kích thước body để tránh tấn công từ chối dịch vụ (DoS) với các request quá lớn
+    options.Limits.MaxRequestBodySize = 5242880; // 5 MB
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
         policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader());
+            .AllowAnyMethod()
+            .AllowAnyHeader());
 });
-
+builder.Host.UseWindowsService();
 var app = builder.Build();
 app.UseRateLimiter();
-//truy cập swagger tại /swagger
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "HIS API v1");
-        c.RoutePrefix = "swagger";  // Truy cập tại /swagger
-    });
-}
 
 app.UseCors("AllowAll");
-app.UseAuthentication();   
+app.UseAuthentication();
 app.UseAuthorization();
+/// Đảm bảo giao tiếp qua kên mã hóa
+app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run("http://0.0.0.0:8080");

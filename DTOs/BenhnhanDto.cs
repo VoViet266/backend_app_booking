@@ -1,17 +1,18 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace his_backend.DTOs;
+
 public class HoSoBenhNhan
 {
-    public required string Holot { get; set; } 
-    public required string Ten { get; set; } 
+    public required string Holot { get; set; }
+    public required string Ten { get; set; }
     public DateOnly? Ngaysinh { get; set; }
     public decimal? Gioitinh { get; set; }
     public string? Diachi { get; set; }
     [MaxLength(15, ErrorMessage = "Số điện thoại không hợp lệ")]
     [RegularExpression("^[0-9]+$", ErrorMessage = "Số điện thoại không hợp lệ")]
     public string? Sodienthoai { get; set; }
-    [MaxLength(12, ErrorMessage = "CMND không hợp lệ")] 
+    [MaxLength(12, ErrorMessage = "CMND không hợp lệ")]
     public required string Cmnd { get; set; }
     public string? Maqg { get; set; }
     public string? NhomMau { get; set; }
@@ -28,9 +29,11 @@ public class HoSoBenhNhan
 public class HoSoBenhNhanResponse : HoSoBenhNhan
 {
     public int? Id { get; set; }
-    public string? HoTen { get; set; } 
-
-    public string? QuanHe { get; set; } 
+    public string? HoTen { get; set; }
+    /// <summary>
+    /// enum QuanHe: 0 - Bản thân, 1 - Vợ/Chồng, 2 - Con, 3 - Cha/Mẹ, 4 - Anh/Chị, 5 - Người khác
+    /// </summary>
+    public string? QuanHe { get; set; }
 
     public bool LaMacDinh { get; set; }
 
@@ -42,7 +45,7 @@ public class CapNhatHoSoRequest : HoSoBenhNhan
 
 public class ThemHosoRequest : HoSoBenhNhan
 {
-    public string? QuanHe { get; set; } 
+    public string? QuanHe { get; set; }
 }
 
 public class CapNhatLienKetRequest : HoSoBenhNhan
@@ -51,7 +54,7 @@ public class CapNhatLienKetRequest : HoSoBenhNhan
     public int HoSoId { get; set; }
 }
 
-public class CapNhatHosoRequest: HoSoBenhNhan
+public class CapNhatHosoRequest : HoSoBenhNhan
 {
     [Required]
     public int Id { get; set; }

@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 [Table("app_users", Schema = "datlichkham")]
 public class AppUser
 {
-    public int? Mand { get; set; }
+    public int Mand { get; set; }
     public required string SoDienThoai { get; set; } 
     public required string MatKhauHash { get; set; } 
             

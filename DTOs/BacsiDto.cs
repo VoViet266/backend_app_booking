@@ -1,5 +1,6 @@
 public class BacsiDto
-{
+{   
+    
     public required string Manv { get; set; }
     public required string Holot { get; set; }
     public required string Ten { get; set; }

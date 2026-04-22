@@ -6,6 +6,7 @@ using his_backend.DTOs;
 using his_backend.Common;
 using Microsoft.AspNetCore.RateLimiting;
 namespace his_backend.Controller;
+
 [ApiController]
 [Route("api/user")]
 [Authorize]
@@ -17,6 +18,7 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
 
     /// <summary>Lấy thông tin tài khoản đang đăng nhập</summary>
     [HttpGet("laythongtin")]
+    [Authorize]
     [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status404NotFound)]
@@ -34,10 +36,11 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
 
     [HttpGet("layuser")]
     [EnableRateLimiting("normal")]
+    [Authorize]
     [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<NguoiDungInfo>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUser()
-    {   
+    {
         var userId = LayUserId();
         if (userId is null)
             return Unauthorized(ServiceResult<NguoiDungInfo>.Fail("Không xác định được người dùng"));
@@ -50,6 +53,7 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
 
     [HttpGet("ho-so")]
     [EnableRateLimiting("normal")]
+    [Authorize]
     [ProducesResponseType(typeof(ServiceResult<List<HoSoBenhNhanResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> LayDanhSachHoSo()
     {
@@ -63,6 +67,7 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
 
     [HttpGet("ho-so/{id:int}")]
     [EnableRateLimiting("normal")]
+    [Authorize]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> LayChiTietHoSo(int id)
@@ -80,6 +85,9 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
 
     [HttpGet("ho-so/lay-danhsach-hosouser/{appuserid:int}")]
     [EnableRateLimiting("normal")]
+    [ProducesResponseType(typeof(ServiceResult<List<HoSoBenhNhanResponse>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ServiceResult<List<HoSoBenhNhanResponse>>), StatusCodes.Status404NotFound)]
+    [Authorize()]
     public async Task<IActionResult> Layhosocuauser(int appuserid, int id)
     {
         var result = await _hoSoService.LayDanhSachAsync(appuserid);
@@ -93,7 +101,7 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ThemHoSo([FromBody] ThemHosoRequest req)
     {
-        
+
         if (!ModelState.IsValid)
             return BadRequest(ServiceResult<object>.Fail("Thông tin không hợp lệ"));
 
@@ -111,11 +119,12 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
 
     [HttpPatch("cap-nhat-ho-so")]
     [EnableRateLimiting("realtime")]
+    [Authorize]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CapNhatHoSo([FromBody] CapNhatHosoRequest req)
     {
-    
+
         if (req.Id <= 0)
             return Unauthorized(ServiceResult<object>.Fail("Không xác định được người dùng"));
 
@@ -148,6 +157,7 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
 
     [HttpDelete("xoa-ho-so/{hoSoId}")]
     [EnableRateLimiting("normal")]
+    [Authorize]
     [ProducesResponseType(typeof(ServiceResult<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<bool>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> XoaHoSo(int hoSoId)
@@ -158,13 +168,14 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
             return Unauthorized(ServiceResult<bool>.Fail("Không xác định được người dùng"));
 
         var result = await _hoSoService.XoaHoSoAsync(userId, hoSoId);
-            
+
         if (!result.Success)
             return StatusCode(result.StatusCode, result);
 
         return Ok(result);
     }
     [HttpPatch("ho-so/{id:int}/mac-dinh")]
+    [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<HoSoBenhNhanResponse>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DatMacDinh(int id)
@@ -178,12 +189,6 @@ public class UserController(IUserService userService, IHoSoBenhNhanService hoSoS
             ? Ok(result)
             : NotFound(ServiceResult<object>.Fail(result.Message));
     }
-
-
-    private string LayLoi() =>
-        string.Join("; ", ModelState.Values
-            .SelectMany(v => v.Errors)
-            .Select(e => e.ErrorMessage));
 
     private int? LayUserId()
     {

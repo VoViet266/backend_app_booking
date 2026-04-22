@@ -119,10 +119,9 @@ public class DangKyRequest
 
     [Required(ErrorMessage = "Mật khẩu không được để trống")]
     [MinLength(6, ErrorMessage = "Mật khẩu tối thiểu 6 ký tự")]
-    public string MatKhau { get; set; } = null!;    
-
-    [Required(ErrorMessage = "CMND không được để trống")]
-    public string Cmnd { get; set; } = null!;
+    public string MatKhau { get; set; } = null!;   
+    
+    public string? Cmnd { get; set; } 
 
     public string? Token    { get; set; }  
 

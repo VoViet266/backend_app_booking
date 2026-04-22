@@ -13,11 +13,6 @@ public class DangkykbController(IDangkykbService dangkykbService) : ControllerBa
 {
     private readonly IDangkykbService _dangkykbService = dangkykbService;
 
-    /// <summary>
-    /// Đặt lịch khám bệnh.
-    /// - Guest: không cần token, điền đầy đủ họ tên/ngày sinh/sdt.
-    /// - User đăng nhập: có thể truyền HoSoId để tự động fill thông tin.
-    /// </summary>
     [HttpPost]
     [EnableRateLimiting("realtime")]
     [ProducesResponseType(typeof(ServiceResult<DatLichKhamResponse>), StatusCodes.Status200OK)]

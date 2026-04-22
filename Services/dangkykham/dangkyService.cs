@@ -92,7 +92,7 @@ public class DangkykbService(AppDbContext db) : IDangkykbService
             await _db.SaveChangesAsync();
         }
 
-        // Phần check trùng lịch đã bị comment trong code gốc, bạn có thể uncomment nếu cần
+        // Phần check trùng lịch 
         if (req.Mabs != null && req.TimeSlot != null)
         {
             var timeSlotStart = req.TimeSlot.Value.UtcDateTime;

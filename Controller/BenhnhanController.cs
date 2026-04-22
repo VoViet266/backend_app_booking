@@ -4,16 +4,17 @@ using his_backend.Common;
 using Microsoft.AspNetCore.Mvc;
 using his_backend.Services;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
 
 namespace his_backend.Controller;
 
 [ApiController]
 [Route("api/nguoibenh")]
-public class BenhnhanController(DonthuocService donthuocService, AppDbContext appDbContext, ILogger<BenhnhanController> logger, HoSoBenhNhanService hoSoService) : ControllerBase
+[Authorize]
+public class BenhnhanController(DonthuocService donthuocService,  HoSoBenhNhanService hoSoService) : ControllerBase
 {
     
-    private readonly AppDbContext _appDbContext = appDbContext;
-    private readonly ILogger<BenhnhanController> _logger = logger;
+
     private readonly HoSoBenhNhanService _hoSoService = hoSoService;
 
     private readonly DonthuocService _donthuocService = donthuocService;
@@ -53,6 +54,7 @@ public class BenhnhanController(DonthuocService donthuocService, AppDbContext ap
 
 
     [HttpGet("toa-thuoc/{mathe}")]
+
     [EnableRateLimiting("normal")]
     [ProducesResponseType(typeof(ServiceResult<List<DotKhamDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ServiceResult<List<DotKhamDto>>), StatusCodes.Status404NotFound)]
